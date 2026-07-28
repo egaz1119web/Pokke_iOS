@@ -12,6 +12,8 @@ Android版 [RELEASE.md](../../AndroidStudioProjects/Stash/RELEASE.md) のiOS版�
 - [x] `SKAdNetworkItems`（Google公式50件、`developers.google.com/admob/ios/ios14` より2回取得し
       一致を確認）
 - [x] `PrivacyInfo.xcprivacy`（アプリ本体分。SDK同梱分と二重にならないよう自前収集分のみ記載）
+- [x] アプリアイコンをAndroidの新しいもの（テラコッタ地の「P.」）に差し替え済み
+- [x] 対応言語は英語・日本語・韓国語（Android版と同じ）
 - [x] Releaseアーカイブがローカルで成功することを確認済み（署名は現状Development証明書。
       Distribution証明書は下記「1」で自動発行される）
 
@@ -72,6 +74,12 @@ Android版のRELEASE.mdでも積み残しになっている項目で、iOSでも
 | バンドルID | `com.egaz.stash`（手順1で登録したものがプルダウンに出る） |
 | SKU | `pokke-ios`（他と被らなければ何でもよい。あとから変更不可なので注意） |
 | ユーザーアクセス | フルアクセス |
+
+---
+
+> **写真ライブラリの権限が増えた**: 詳細画面の「保存」でサムネイル画像を
+> 写真のアルバム「Pokke」へ入れるため、`NSPhotoLibraryAddUsageDescription` を追加した。
+> App Store Connectの審査メモに「保存したリンクの画像を写真に追加する機能」と書いておくと早い。
 
 ---
 

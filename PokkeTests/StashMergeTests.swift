@@ -83,8 +83,8 @@ final class StashMergeTests: XCTestCase {
 
     func testCollectionsMergeAndDeletionPropagates() {
         let local = StashState(collections: [
-            StashCollection(id: "c1", name: "レシピ", emoji: "🍳", colorIndex: 0, updatedAt: now - 1000),
-            StashCollection(id: "c2", name: "映画", emoji: "🎬", colorIndex: 1, updatedAt: now - 900),
+            StashCollection(id: "c1", name: "レシピ", icon: "utensils", colorIndex: 0, updatedAt: now - 1000),
+            StashCollection(id: "c2", name: "映画", icon: "clap", colorIndex: 1, updatedAt: now - 900),
         ])
         let remote = StashState(deletedIds: ["c2": now - 100])
 
@@ -147,7 +147,7 @@ final class StashMergeTests: XCTestCase {
     func testMergeIsIdempotent() {
         let local = StashState(
             items: [item("a"), item("b", updatedAt: now - 100)],
-            collections: [StashCollection(id: "c1", name: "レシピ", emoji: "🍳", colorIndex: 0, updatedAt: now)],
+            collections: [StashCollection(id: "c1", name: "レシピ", icon: "utensils", colorIndex: 0, updatedAt: now)],
             deletedIds: ["z": now - 50]
         )
         let remote = StashState(items: [item("b", title: "更新", updatedAt: now)])

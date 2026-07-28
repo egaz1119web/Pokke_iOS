@@ -66,23 +66,37 @@ final class StashRepository: ObservableObject {
         return item
     }
 
-    /// 共有拡張が保存した直後のアイテムなど、まだOGPを取れていない分を後追いで埋める
-    func backfillMetadata() {
-        let pending = state.items.filter {
-            $0.imageUrl == nil && $0.siteName == nil && $0.title == Self.displayFallbackTitle($0.url)
-        }
-        for item in pending {
+    /// サムネイル・本文がまだ空のアイテムを取得し直す。
+    ///
+    /// 共有拡張は別プロセスで短命なのでOGPを取らずURLだけ保存する。その分と、
+    /// 保存時に取得できなかった（通信断・UAを弾かれた等）分をここで埋める。
+    /// 全件叩かないよう件数を絞る。
+    func retryMissingMetadata(limit: Int = 20) {
+        let targets = state.items
+            .filter { $0.imageUrl == nil && $0.description == nil }
+            .sorted { $0.savedAt > $1.savedAt }
+            .prefix(limit)
+        for item in targets {
             Task { await fetchMetadata(for: item.id, url: item.url) }
         }
     }
 
+    /// 詳細画面からの手動再取得
+    func refetchMetadata(itemId: String) {
+        guard let item = state.items.first(where: { $0.id == itemId }) else { return }
+        Task { await fetchMetadata(for: item.id, url: item.url) }
+    }
+
+    /// メタデータを取得して1件に反映する。取得できなければ何もしない
     private func fetchMetadata(for id: String, url: String) async {
         guard let meta = await MetadataFetcher.fetch(url) else { return }
-        guard let index = state.items.firstIndex(where: { $0.id == id }) else { return }
         mutate { s in
+            // 取得は非同期なので、待っている間に消えている・並びが変わっていることがある
+            guard let index = s.items.firstIndex(where: { $0.id == id }) else { return }
             s.items[index].title = meta.title ?? s.items[index].title
             s.items[index].siteName = meta.siteName ?? s.items[index].siteName
             s.items[index].imageUrl = meta.imageUrl ?? s.items[index].imageUrl
+            s.items[index].description = meta.description ?? s.items[index].description
             // 取得したサムネ・タイトルも他端末へ配りたいので更新時刻を進める
             s.items[index].updatedAt = nowMillis()
         }
@@ -103,7 +117,7 @@ final class StashRepository: ObservableObject {
     func reloadFromDisk() {
         guard let onDisk = StashStore.read(), onDisk != state else { return }
         mergeRemote(onDisk)
-        backfillMetadata()
+        retryMissingMetadata()
     }
 
     func updateItem(_ updated: StashItem) {
@@ -143,16 +157,25 @@ final class StashRepository: ObservableObject {
     }
 
     @discardableResult
-    func addCollection(name: String, emoji: String, colorIndex: Int) -> StashCollection {
+    func addCollection(name: String, icon: String, colorIndex: Int) -> StashCollection {
         let collection = StashCollection(
             id: UUID().uuidString,
             name: name,
-            emoji: emoji,
+            icon: icon,
             colorIndex: colorIndex,
             updatedAt: nowMillis()
         )
         mutate { $0.collections.append(collection) }
         return collection
+    }
+
+    /// 名前・アイコン・色の編集。更新時刻を進めて他端末にも配る
+    func updateCollection(_ updated: StashCollection) {
+        mutate { s in
+            guard let index = s.collections.firstIndex(where: { $0.id == updated.id }) else { return }
+            s.collections[index] = updated
+            s.collections[index].updatedAt = nowMillis()
+        }
     }
 
     func deleteCollection(id: String) {

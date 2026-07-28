@@ -14,7 +14,7 @@ enum StashJson {
             [
                 "id": c.id,
                 "name": c.name,
-                "emoji": c.emoji,
+                "icon": c.icon,
                 "colorIndex": c.colorIndex,
                 "updatedAt": c.updatedAt,
             ]
@@ -37,14 +37,13 @@ enum StashJson {
 
         let items = (root["items"] as? [[String: Any]] ?? []).compactMap(itemFromJson)
         let collections = (root["collections"] as? [[String: Any]] ?? []).compactMap { o -> StashCollection? in
-            guard let id = o["id"] as? String,
-                  let name = o["name"] as? String,
-                  let emoji = o["emoji"] as? String
-            else { return nil }
+            guard let id = o["id"] as? String, let name = o["name"] as? String else { return nil }
             return StashCollection(
                 id: id,
                 name: name,
-                emoji: emoji,
+                // 線画アイコンに移行する前は絵文字を持っていた
+                icon: (o["icon"] as? String)
+                    ?? CollectionIcons.fromLegacyEmoji(o["emoji"] as? String ?? ""),
                 colorIndex: millis(o["colorIndex"]).map(Int.init) ?? 0,
                 updatedAt: millis(o["updatedAt"]) ?? 0
             )
@@ -73,6 +72,7 @@ enum StashJson {
             "title": item.title,
             "siteName": item.siteName ?? NSNull(),
             "imageUrl": item.imageUrl ?? NSNull(),
+            "description": item.description ?? NSNull(),
             "collectionId": item.collectionId ?? NSNull(),
             "tags": item.tags,
             "savedAt": item.savedAt,
@@ -95,6 +95,8 @@ enum StashJson {
             title: title,
             siteName: o["siteName"] as? String,
             imageUrl: o["imageUrl"] as? String,
+            // description 導入前のデータには存在しないキー
+            description: o["description"] as? String,
             collectionId: o["collectionId"] as? String,
             tags: o["tags"] as? [String] ?? [],
             savedAt: savedAt,

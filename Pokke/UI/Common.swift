@@ -1,3 +1,4 @@
+import SafariServices
 import SwiftUI
 
 /// 「3日前」「3 days ago」のような相対時刻表示
@@ -15,207 +16,294 @@ func relativeTime(_ millis: EpochMillis) -> String {
     }
 }
 
-/// ブラウザで開く＋再訪カウント
+/// リンクを開く＋再訪カウント。
+///
+/// 既定では `SFSafariViewController` でアプリ内に表示する。Safariのログイン状態を
+/// 引き継ぐので、X・Instagramのようにログインが要るサービスでも本文・画像・動画が
+/// そのまま見られる（AndroidのCustom Tabsと同じ狙い）。
 @MainActor
 func openLink(_ item: StashItem) {
     StashRepository.shared.markOpened(id: item.id)
     guard let url = URL(string: item.url) else { return }
+
+    if AppPrefs.shared.openInApp,
+       url.scheme == "https" || url.scheme == "http",
+       let presenter = topViewController() {
+        let configuration = SFSafariViewController.Configuration()
+        configuration.barCollapsingEnabled = true
+        let safari = SFSafariViewController(url: url, configuration: configuration)
+        safari.preferredControlTintColor = UIColor(Palette.accent)
+        safari.preferredBarTintColor = UIColor(Palette.bg)
+        presenter.present(safari, animated: true)
+        return
+    }
     UIApplication.shared.open(url)
 }
 
-/// OGP画像 or 頭文字のサムネイル
+/// 他のアプリへリンクを共有する。送信先はシステムの共有シートで利用者が選ぶ
+@MainActor
+func shareLink(_ item: StashItem, from sourceRect: CGRect? = nil) {
+    guard let url = URL(string: item.url), let presenter = topViewController() else { return }
+    let activity = UIActivityViewController(activityItems: [item.title, url], applicationActivities: nil)
+    // iPadでは吹き出しの根元が要る。指定が無ければ画面中央から出す
+    if let popover = activity.popoverPresentationController {
+        popover.sourceView = presenter.view
+        popover.sourceRect = sourceRect ?? CGRect(
+            x: presenter.view.bounds.midX,
+            y: presenter.view.bounds.midY,
+            width: 0,
+            height: 0
+        )
+        popover.permittedArrowDirections = []
+    }
+    presenter.present(activity, animated: true)
+}
+
+/// 今いちばん手前のビューコントローラ。シートの上にさらに出すために辿る
+@MainActor
+func topViewController() -> UIViewController? {
+    let scene = UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .first { $0.activationState == .foregroundActive }
+    var top = scene?.windows.first { $0.isKeyWindow }?.rootViewController
+    while let presented = top?.presentedViewController { top = presented }
+    return top
+}
+
+/// コレクションカードの地色
+func collectionColor(_ colorIndex: Int) -> Color { Palette.collectionColor(colorIndex) }
+
+/// サムネイル。OGP画像があればそれを、無ければサービス色の面に線画アイコンを置く。
+///
+/// 地色をサービスごとに変えているので、画像が取れていない行が並んでも
+/// 一覧が単調なグレーの帯にならない。
 struct Thumbnail: View {
     let item: StashItem
-    var size: CGFloat = 56
-    var corner: CGFloat = 12
+    var size: CGFloat = 76
+    var corner: CGFloat = 16
 
     var body: some View {
-        Group {
-            if let imageUrl = item.imageUrl, let url = URL(string: imageUrl) {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image.resizable().scaledToFill()
-                    } else {
-                        placeholder
-                    }
-                }
-            } else {
-                placeholder
-            }
+        ZStack {
+            ServiceVisual.of(host: item.host).tint
+            LinkImage(item: item, logoSize: size * 0.37)
         }
+        // 先に大きさを決めてから切り抜く。順番が逆だと画像がカードの外へはみ出す
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
     }
+}
 
-    private var placeholder: some View {
-        ZStack {
-            Palette.placeholderBg
-            Text(item.host.prefix(1).uppercased())
-                .font(.title2)
-                .foregroundStyle(Palette.onSurfaceVariant)
+/// OGP画像 → 失敗したらサービスのロゴ。
+/// 画像URLが取れていても実際には404や期限切れで表示できないことがあり、
+/// その場合に空白のままだと何のリンクか分からなくなるためロゴへ落とす。
+struct LinkImage: View {
+    let item: StashItem
+    var logoSize: CGFloat
+    /// 一覧のサムネイルは切り抜かず全体を見せる。Instagramの正方形画像や
+    /// 横長のOGP画像を切り抜くと中央の一部しか映らず、何の画像か分からなくなる
+    var fill = false
+
+    var body: some View {
+        if let imageUrl = item.imageUrl, let url = URL(string: imageUrl) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case let .success(image):
+                    if fill {
+                        // 埋める向きの拡大は枠より大きなレイアウト寸法を返すので、
+                        // そのまま置くとグリッドのセルごと押し広げてしまう。
+                        // overlay は親の大きさに関与しないため、はみ出しは描画だけに閉じる
+                        Color.clear.overlay {
+                            image.resizable().scaledToFill()
+                        }
+                    } else {
+                        image.resizable().scaledToFit()
+                    }
+                case .failure:
+                    logo
+                default:
+                    Color.clear
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+        } else {
+            logo
         }
+    }
+
+    private var logo: some View {
+        ServiceLogo(
+            domain: DomainGrouping.logoDomain(host: item.host),
+            label: DomainGrouping.domainLabel(host: item.host),
+            size: logoSize
+        )
     }
 }
 
-/// リスト1行分のアイテムカード
+/// リスト1行分のアイテムカード。
+///
+/// ホームは大きめのサムネイル＋抜粋、コレクション詳細や検索結果は
+/// 小さめのサムネイルだけ、と密度を変えて使う。
 struct ItemRow: View {
     let item: StashItem
-    let collection: StashCollection?
+    var thumbnailSize: CGFloat = 76
+    var thumbnailCorner: CGFloat = 16
+    var showExcerpt = true
     let onTap: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .center, spacing: 12) {
-                Thumbnail(item: item)
-                VStack(alignment: .leading, spacing: 2) {
+        PokkeCard(action: onTap) {
+            HStack(spacing: 12) {
+                Thumbnail(item: item, size: thumbnailSize, corner: thumbnailCorner)
+                VStack(alignment: .leading, spacing: 4) {
                     Text(item.title)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Palette.onSurface)
+                        .font(PokkeType.bodyLarge)
+                        .foregroundStyle(Palette.ink)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-
-                    HStack(spacing: 4) {
-                        if let collection {
-                            Text(collection.emoji).font(.caption2)
-                        }
-                        Text(L.s("item_meta", item.host, relativeTime(item.savedAt)))
-                            .font(.caption)
-                            .foregroundStyle(Palette.onSurfaceVariant)
+                    // SNSの投稿は本文が無いとタイトルだけでは中身が分からないので一覧にも出す
+                    if showExcerpt, let description = item.description {
+                        Text(description)
+                            .font(PokkeType.bodySmall)
+                            .foregroundStyle(Palette.neutral700)
                             .lineLimit(1)
-                        if item.unread {
-                            Circle()
-                                .fill(Palette.primary)
-                                .frame(width: 7, height: 7)
-                                .padding(.leading, 2)
-                        }
                     }
-
-                    if !item.tags.isEmpty {
-                        Text(item.tags.map { "#\($0)" }.joined(separator: " "))
-                            .font(.caption)
-                            .foregroundStyle(Palette.primary)
-                            .lineLimit(1)
-                            .padding(.top, 2)
-                    }
+                    ItemMetaRow(item: item)
                 }
                 Spacer(minLength: 0)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .cardBackground()
     }
 }
 
-/// Material3の FilterChip 相当
-struct FilterChipView: View {
-    let label: String
-    let selected: Bool
-    let action: () -> Void
+/// ドメイン・保存時刻と、右端の未読ドット
+private struct ItemMetaRow: View {
+    let item: StashItem
 
     var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(selected ? Palette.navy : Palette.onSurfaceVariant)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(
-                    Capsule().fill(selected ? Palette.primaryContainer : Color.clear)
-                )
-                .overlay(
-                    Capsule().stroke(selected ? Palette.primary : Palette.outline, lineWidth: selected ? 1.5 : 1)
-                )
+        HStack(spacing: 6) {
+            Text(item.host)
+                .font(PokkeType.bodySmall)
+                .foregroundStyle(Palette.neutral600)
+                .lineLimit(1)
+                .layoutPriority(-1)
+            Text("・")
+                .font(PokkeType.bodySmall)
+                .foregroundStyle(Palette.neutral400)
+            Text(relativeTime(item.savedAt))
+                .font(PokkeType.bodySmall)
+                .foregroundStyle(Palette.neutral600)
+                .lineLimit(1)
+                .fixedSize()
+            Spacer(minLength: 0)
+            if item.unread { UnreadDot() }
         }
-        .buttonStyle(.plain)
     }
 }
 
-/// 空状態の案内
-struct EmptyHint: View {
-    let text: String
+struct UnreadDot: View {
+    var size: CGFloat = 8
 
     var body: some View {
-        Text(text)
-            .font(.subheadline)
-            .foregroundStyle(Palette.onSurfaceVariant)
-            .multilineTextAlignment(.center)
+        Circle().fill(Palette.ink).frame(width: size, height: size)
+    }
+}
+
+/// グリッド表示用のカード。サムネイルを大きく見せる
+struct ItemGridCard: View {
+    let item: StashItem
+    let onTap: () -> Void
+
+    var body: some View {
+        PokkeCard(padding: 9, action: onTap) {
+            ZStack {
+                ServiceVisual.of(host: item.host).tint
+                LinkImage(item: item, logoSize: 32, fill: true)
+            }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 40)
-    }
-}
+            .frame(height: 104)
+            .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
 
-/// 画面右下に浮かせる「＋」ボタン（AndroidのFAB相当）
-struct AddButton: View {
-    let action: () -> Void
+            Text(item.title)
+                .font(PokkeType.bodyLarge)
+                .foregroundStyle(Palette.ink)
+                .lineLimit(2, reservesSpace: true)
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal, 3)
+                .padding(.top, 9)
 
-    var body: some View {
-        Button(action: action) {
-            Text("＋")
-                .font(.system(size: 26, weight: .medium))
-                .foregroundStyle(Palette.onPrimary)
-                .frame(width: 56, height: 56)
-                .background(Circle().fill(Palette.primary))
-                .shadow(color: Palette.slate.opacity(0.3), radius: 6, x: 0, y: 3)
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, 20)
-        .padding(.bottom, 20)
-    }
-}
-
-/// URL手入力シート
-struct AddLinkSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    /// 保存できたら true を返す。false ならURLとして解釈できなかった
-    let onAdd: (String) -> Bool
-
-    @State private var text = ""
-    @State private var showError = false
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
-                TextField(L.s("add_link_placeholder"), text: $text)
-                    .textFieldStyle(.roundedBorder)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
-                    .focused($focused)
-                    .onChange(of: text) { _, _ in showError = false }
-
-                if showError {
-                    Text(L.s("add_link_invalid"))
-                        .font(.caption)
-                        .foregroundStyle(Palette.error)
-                }
-
-                Text(L.s("add_link_share_hint"))
-                    .font(.caption)
-                    .foregroundStyle(Palette.onSurfaceVariant)
-
+            HStack(spacing: 5) {
+                Text(item.host)
+                    .font(PokkeType.bodySmall)
+                    .foregroundStyle(Palette.neutral600)
+                    .lineLimit(1)
+                    .layoutPriority(-1)
+                Text(relativeTime(item.savedAt))
+                    .font(PokkeType.bodySmall)
+                    .foregroundStyle(Palette.neutral600)
+                    .lineLimit(1)
+                    .fixedSize()
                 Spacer(minLength: 0)
             }
-            .padding(20)
-            .background(Palette.appBackground)
-            .navigationTitle(L.s("add_link_title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L.s("action_cancel")) { dismiss() }
+            .padding(.horizontal, 3)
+            .padding(.top, 4)
+            .padding(.bottom, 3)
+        }
+    }
+}
+
+/// 長い本文を折りたたんで表示する。あふれている場合だけ開閉リンクを出す。
+///
+/// 本文は長押しで選択・コピーできる。そのため本文自体はタップで開閉しない
+/// （タップ領域を載せると選択のジェスチャーと取り合う）。
+struct ExpandableText: View {
+    let text: String
+    var collapsedLineLimit = 3
+
+    @State private var expanded = false
+    @State private var overflowing = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(text)
+                .font(PokkeType.bodyMedium)
+                .lineSpacing(PokkeType.bodyLineSpacing)
+                .foregroundStyle(Palette.neutral800)
+                .lineLimit(expanded ? nil : collapsedLineLimit)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .background(overflowProbe)
+
+            if overflowing {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+                } label: {
+                    Text(L.s(expanded ? "detail_show_less" : "detail_show_more"))
+                        .font(PokkeType.labelMedium)
+                        .foregroundStyle(Palette.accent700)
+                        // 文字だけだと的が小さいので、押せる範囲を縦に広げておく
+                        .padding(.vertical, 6)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(L.s("action_save")) {
-                        if onAdd(text) { dismiss() } else { showError = true }
-                    }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
-        .presentationDetents([.height(260)])
-        .onAppear { focused = true }
+    }
+
+    /// 全文が畳んだ高さに収まるかを [ViewThatFits] に判定させる。
+    /// 収まらなかったときだけ2番目が選ばれるので、そこで開閉リンクを出す。
+    /// 一度立った印は下ろさない（開いた後に消すと「閉じる」が押せなくなる）
+    @ViewBuilder
+    private var overflowProbe: some View {
+        if !expanded {
+            ViewThatFits(in: .vertical) {
+                Text(text)
+                    .font(PokkeType.bodyMedium)
+                    .lineSpacing(PokkeType.bodyLineSpacing)
+                Color.clear.onAppear { overflowing = true }
+            }
+            .hidden()
+        }
     }
 }

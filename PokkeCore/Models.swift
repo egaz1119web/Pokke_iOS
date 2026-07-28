@@ -17,6 +17,9 @@ struct StashItem: Identifiable, Equatable, Hashable {
     var title: String
     var siteName: String?
     var imageUrl: String?
+    /// og:description。SNSの投稿では本文がここに入るため、詳細画面で見せる。
+    /// 記事の場合はリード文・要約になる。
+    var description: String?
     var collectionId: String?
     var tags: [String] = []
     var savedAt: EpochMillis
@@ -32,6 +35,7 @@ struct StashItem: Identifiable, Equatable, Hashable {
         title: String,
         siteName: String? = nil,
         imageUrl: String? = nil,
+        description: String? = nil,
         collectionId: String? = nil,
         tags: [String] = [],
         savedAt: EpochMillis,
@@ -45,6 +49,7 @@ struct StashItem: Identifiable, Equatable, Hashable {
         self.title = title
         self.siteName = siteName
         self.imageUrl = imageUrl
+        self.description = description
         self.collectionId = collectionId
         self.tags = tags
         self.savedAt = savedAt
@@ -63,11 +68,13 @@ struct StashItem: Identifiable, Equatable, Hashable {
     }
 }
 
-/// 絵文字＋色でカスタムできるコレクション
+/// アイコン＋色でカスタムできるコレクション
 struct StashCollection: Identifiable, Equatable, Hashable {
     var id: String
     var name: String
-    var emoji: String
+    /// 線画アイコンの識別子（"bookmark" など）。UI側で絵に解決する。
+    /// 絵文字を持っていた頃のデータは読み込み時にここへ変換される。
+    var icon: String
     var colorIndex: Int
     /// 端末間マージの勝敗判定に使う最終更新時刻
     var updatedAt: EpochMillis = 0

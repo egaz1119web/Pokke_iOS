@@ -1,0 +1,30 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSPhotoLibraryAddUsageDescription" : {
+      "comment" : "詳細画面の「保存」でサムネイルを写真へ入れるときの権限説明。Info.plist に直接書くと日本語のまま全言語に出るため、ここで訳し分ける",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds thumbnail images from your saved links to Photos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存したリンクのサムネイル画像を写真に追加します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장한 링크의 썸네일 이미지를 사진에 추가합니다."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

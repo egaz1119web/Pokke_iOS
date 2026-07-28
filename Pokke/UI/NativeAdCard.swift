@@ -55,7 +55,11 @@ struct NativeAdCard: View {
             if let ad = loader.nativeAd {
                 NativeAdViewRepresentable(nativeAd: ad)
                     .frame(maxWidth: .infinity)
-                    .cardBackground()
+                    .background(
+                        RoundedRectangle(cornerRadius: Corner.large, style: .continuous)
+                            .fill(Palette.surface)
+                    )
+                    .softShadow(.sm)
             }
         }
         .onAppear { loadIfAllowed() }
@@ -71,64 +75,67 @@ struct NativeAdCard: View {
 
 /// GoogleMobileAds の NativeAdView をコードで組み立てる。
 /// アセットの各Viewは NativeAdView 側に登録しないとインプレッションが計測されない。
+///
+/// レイアウトはAndroidの `res/layout/native_ad_card.xml` に合わせているが、
+/// **MediaViewだけはiOS側にしか無い**。iOSのSDKに入っている広告バリデータが
+/// 「メイン画像/動画にMediaViewを使っていない」を実装エラーとして出すため、
+/// 画像アセットはImageViewで代用せずMediaViewで表示している。
 private struct NativeAdViewRepresentable: UIViewRepresentable {
     let nativeAd: NativeAd
 
     func makeUIView(context: Context) -> NativeAdView {
         let adView = NativeAdView()
-        adView.translatesAutoresizingMaskIntoConstraints = false
+        // ここで translatesAutoresizingMaskIntoConstraints を false にしないこと。
+        // 外側の幅が制約として伝わらなくなり、本文ラベルが折り返さずカードの外まで伸びる
+        adView.clipsToBounds = true
 
-        let badge = UILabel()
-        badge.text = "Ad"
-        badge.font = .systemFont(ofSize: 10, weight: .bold)
-        badge.textColor = .white
+        let badge = PaddedLabel()
+        badge.text = L.s("ad_badge")
+        badge.font = PokkeFonts.uiFont(10, .bold)
+        badge.textColor = UIColor(Palette.accent)
         badge.textAlignment = .center
-        badge.backgroundColor = UIColor(Palette.royalBlue)
-        badge.layer.cornerRadius = 3
+        badge.backgroundColor = UIColor(Palette.accent200)
+        badge.layer.cornerRadius = 4
         badge.layer.masksToBounds = true
         badge.setContentHuggingPriority(.required, for: .horizontal)
-        NSLayoutConstraint.activate([
-            badge.widthAnchor.constraint(equalToConstant: 22),
-            badge.heightAnchor.constraint(equalToConstant: 15),
-        ])
+        badge.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let icon = UIImageView()
         icon.contentMode = .scaleAspectFill
         icon.clipsToBounds = true
-        icon.layer.cornerRadius = 8
+        icon.layer.cornerRadius = 14
         NSLayoutConstraint.activate([
-            icon.widthAnchor.constraint(equalToConstant: 40),
-            icon.heightAnchor.constraint(equalToConstant: 40),
+            icon.widthAnchor.constraint(equalToConstant: 56),
+            icon.heightAnchor.constraint(equalToConstant: 56),
         ])
 
-        // メイン画像/動画アセット。AdMobのネイティブ広告バリデータは、ここをImageViewで
-        // 代用せずMediaViewを使うことを必須にしている（審査・広告配信ポリシー上の要件）
         let media = MediaView()
         media.clipsToBounds = true
-        media.layer.cornerRadius = 12
+        media.layer.cornerRadius = 15
         media.translatesAutoresizingMaskIntoConstraints = false
         let mediaHeight = media.heightAnchor.constraint(equalToConstant: 160)
         mediaHeight.priority = .required
 
         let headline = UILabel()
-        headline.font = .preferredFont(forTextStyle: .subheadline)
+        headline.font = PokkeFonts.uiFont(16, .bold)
         headline.numberOfLines = 2
-        headline.textColor = UIColor(Palette.onSurface)
+        headline.textColor = UIColor(Palette.ink)
 
         let advertiser = UILabel()
-        advertiser.font = .preferredFont(forTextStyle: .caption1)
-        advertiser.textColor = UIColor(Palette.onSurfaceVariant)
+        advertiser.font = PokkeFonts.uiFont(12, .semiBold)
+        advertiser.numberOfLines = 1
+        advertiser.textColor = UIColor(Palette.neutral600)
 
         let body = UILabel()
-        body.font = .preferredFont(forTextStyle: .caption1)
+        body.font = PokkeFonts.uiFont(13, .medium)
         body.numberOfLines = 2
-        body.textColor = UIColor(Palette.onSurfaceVariant)
+        body.textColor = UIColor(Palette.neutral700)
 
         var ctaConfig = UIButton.Configuration.filled()
-        ctaConfig.baseBackgroundColor = UIColor(Palette.primary)
-        ctaConfig.baseForegroundColor = UIColor(Palette.onPrimary)
-        ctaConfig.cornerStyle = .medium
-        ctaConfig.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+        ctaConfig.baseBackgroundColor = UIColor(Palette.accent)
+        ctaConfig.baseForegroundColor = .white
+        ctaConfig.cornerStyle = .capsule
+        ctaConfig.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
         let cta = UIButton(configuration: ctaConfig)
         cta.setContentCompressionResistancePriority(.required, for: .horizontal)
         // タップは NativeAdView が横取りするので、ボタン自身は反応させない
@@ -149,15 +156,27 @@ private struct NativeAdViewRepresentable: UIViewRepresentable {
         textColumn.axis = .vertical
         textColumn.spacing = 2
 
-        let topRow = UIStackView(arrangedSubviews: [icon, textColumn, cta])
+        let topRow = UIStackView(arrangedSubviews: [icon, textColumn])
         topRow.axis = .horizontal
         topRow.spacing = 12
         topRow.alignment = .center
 
-        // 上段(アイコン・見出し・CTA) → メイン画像/動画 → 本文、の縦積み
-        let column = UIStackView(arrangedSubviews: [topRow, media, body])
+        // CTAは右寄せ。UIStackViewの空スペーサーだと幅が決まらず、
+        // カードからはみ出すのでコンテナに直接制約で留める
+        let ctaRow = UIView()
+        cta.translatesAutoresizingMaskIntoConstraints = false
+        ctaRow.addSubview(cta)
+        NSLayoutConstraint.activate([
+            cta.trailingAnchor.constraint(equalTo: ctaRow.trailingAnchor),
+            cta.topAnchor.constraint(equalTo: ctaRow.topAnchor),
+            cta.bottomAnchor.constraint(equalTo: ctaRow.bottomAnchor),
+            cta.leadingAnchor.constraint(greaterThanOrEqualTo: ctaRow.leadingAnchor),
+        ])
+
+        // 上段(アイコン・見出し) → メイン画像/動画 → 本文 → CTA、の縦積み
+        let column = UIStackView(arrangedSubviews: [topRow, media, body, ctaRow])
         column.axis = .vertical
-        column.spacing = 10
+        column.spacing = 8
         column.translatesAutoresizingMaskIntoConstraints = false
 
         adView.addSubview(column)
@@ -178,9 +197,9 @@ private struct NativeAdViewRepresentable: UIViewRepresentable {
         return adView
     }
 
-    /// UIViewRepresentableはAuto Layout制約だけでは`List`の行の高さに正しく反映されないことがある
-    /// （制約は組めていても、SwiftUI側がそれを読み取れず既定の小さいサイズのまま次の行と重なる）。
-    /// 明示的にAuto Layoutで計算した高さを返し、`List`に正しい行高を伝える。
+    /// UIViewRepresentableはAuto Layout制約だけではSwiftUI側の行の高さに正しく反映されない
+    /// （制約は組めていても、SwiftUIがそれを読み取れず既定の小さいサイズのまま次の行と重なる）。
+    /// 明示的にAuto Layoutで計算した高さを返す。
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: NativeAdView, context: Context) -> CGSize? {
         let width = proposal.width ?? UIScreen.main.bounds.width
         let target = CGSize(width: width, height: UIView.layoutFittingCompressedSize.height)
@@ -195,7 +214,11 @@ private struct NativeAdViewRepresentable: UIViewRepresentable {
     func updateUIView(_ adView: NativeAdView, context: Context) {
         (adView.headlineView as? UILabel)?.text = nativeAd.headline
 
-        (adView.mediaView as? MediaView)?.mediaContent = nativeAd.mediaContent
+        let media = adView.mediaView as? MediaView
+        media?.mediaContent = nativeAd.mediaContent
+        // 画像も動画も無い広告がある。枠だけ残すと白い箱が居座るので畳む
+        let hasMedia = nativeAd.mediaContent.hasVideoContent || nativeAd.mediaContent.mainImage != nil
+        media?.isHidden = !hasMedia
 
         let icon = adView.iconView as? UIImageView
         icon?.image = nativeAd.icon?.image
@@ -211,12 +234,29 @@ private struct NativeAdViewRepresentable: UIViewRepresentable {
         if let ctaButton = adView.callToActionView as? UIButton {
             ctaButton.configuration?.attributedTitle = nativeAd.callToAction.map {
                 AttributedString($0, attributes: AttributeContainer([
-                    .font: UIFont.systemFont(ofSize: 13, weight: .semibold),
+                    .font: PokkeFonts.uiFont(13, .bold),
                 ]))
             }
         }
-        adView.callToActionView?.isHidden = nativeAd.callToAction == nil
+        adView.callToActionView?.superview?.isHidden = nativeAd.callToAction == nil
 
         adView.nativeAd = nativeAd
+    }
+}
+
+/// 「広告」バッジ。UILabelは内側の余白を持てないので描画時に足す
+private final class PaddedLabel: UILabel {
+    private let insets = UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.inset(by: insets))
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width: size.width + insets.left + insets.right,
+            height: size.height + insets.top + insets.bottom
+        )
     }
 }

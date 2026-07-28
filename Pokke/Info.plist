@@ -8,6 +8,25 @@
 	<string>en</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+
+	<!-- 詳細画面の「保存」で、サムネイル画像を写真ライブラリのアルバム「Pokke」へ入れる。
+	     追加のみで既存の写真は読まないため .addOnly の権限しか要求しない。
+	     ここは開発言語(en)の文言で、ja/ko は InfoPlist.xcstrings 側で差し替わる -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Adds thumbnail images from your saved links to Photos.</string>
+
+	<!-- 同梱フォント（Pokke/Fonts/）。値はファイル名で、コードからはPostScript名で引く。
+	     すべて SIL Open Font License 1.1（表記は THIRD_PARTY_NOTICES.md） -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>caprasimo_regular.ttf</string>
+		<string>figtree_regular.ttf</string>
+		<string>figtree_medium.ttf</string>
+		<string>figtree_semibold.ttf</string>
+		<string>figtree_bold.ttf</string>
+		<string>zen_maru_gothic_regular.ttf</string>
+		<string>zen_maru_gothic_bold.ttf</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

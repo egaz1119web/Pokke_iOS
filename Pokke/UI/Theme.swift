@@ -1,38 +1,71 @@
 import SwiftUI
 
-/// アプリアイコンから採取したパレット（Pokke）。Android版の Theme.kt と同じ値。
+/// Organicデザインシステムのトークン。Android版 `ui/theme/Theme.kt` と同じ値。
 ///
-/// Android版が lightColorScheme 固定なので、こちらもライト固定にして見た目を揃える
-/// （RootView で preferredColorScheme(.light) を指定している）。
+/// クリーム地＋テラコッタ／セージ、文字はネイビーインク。
+/// 100〜900のランプは共通の明度スケールで作られているので、
+/// どの色相でも同じ段は同じ明るさに見える。
+///
+/// 使い分け:
+/// - 100〜200 … 淡い面（チップ地・サムネ地・活性ナビ地）
+/// - 600〜800 … 淡い面の上に載せる文字・アイコン
+/// - 押下状態 … 基準の一段濃い側（accent → accent600）
 enum Palette {
-    static let navy = Color(hex: 0x1A237E)       // Pカードの濃紺（メインカラー）
-    static let royalBlue = Color(hex: 0x5B8DEF)  // アイコンの青い丸（アクセント）
-    static let skyTint = Color(hex: 0xD8EDF9)    // アイコン背景の淡い青
-    static let slate = Color(hex: 0x2E3A59)      // 文字用のダークスレート
-    static let appBackground = Color(hex: 0xF5F9FE)
-    static let placeholderBg = Color(hex: 0xE7EEF9)
-
-    static let primary = navy
-    static let onPrimary = Color.white
-    static let primaryContainer = skyTint
-    static let secondary = royalBlue
+    /// 画面地色（クリーム）
+    static let bg = Color(hex: 0xF5EAD8)
+    /// カード・シート・ナビの地
     static let surface = Color.white
-    static let onSurface = slate
-    static let surfaceVariant = placeholderBg
-    static let onSurfaceVariant = Color(hex: 0x5A6480)
-    static let outline = Color(hex: 0xC2CCE0)
-    static let error = Color(hex: 0xB3261E)
+    /// 見出し・カードタイトル・未読ドット・トースト地。旧ブランド紺の継承
+    static let ink = Color(hex: 0x333A63)
+    /// インクを使わない本文系
+    static let text = Color(hex: 0x201E1D)
+    /// 主ボタン・スイッチON・ナビ活性
+    static let accent = Color(hex: 0xC67139)
+    /// 第二アクセント（ロゴ横のしおり、Instagram系のサムネ地）
+    static let accent2 = Color(hex: 0x7A8A5E)
 
-    /// コレクションに割り当てられる色（絵文字カードの背景）
+    static let accent100 = Color(hex: 0xFFF2EB)
+    static let accent200 = Color(hex: 0xFFE1D0)
+    static let accent300 = Color(hex: 0xFFC6A5)
+    static let accent400 = Color(hex: 0xF6A06B)
+    static let accent500 = Color(hex: 0xD67F48)
+    static let accent600 = Color(hex: 0xB2622D)
+    static let accent700 = Color(hex: 0x8C491A)
+    static let accent800 = Color(hex: 0x643312)
+    static let accent900 = Color(hex: 0x402310)
+
+    static let accent2_100 = Color(hex: 0xF0FAE1)
+    static let accent2_200 = Color(hex: 0xE1EECC)
+    static let accent2_300 = Color(hex: 0xCCDBB2)
+    static let accent2_400 = Color(hex: 0xAEBF92)
+    static let accent2_500 = Color(hex: 0x8FA073)
+    static let accent2_600 = Color(hex: 0x728157)
+    static let accent2_700 = Color(hex: 0x56633F)
+    static let accent2_800 = Color(hex: 0x3D472B)
+    static let accent2_900 = Color(hex: 0x272E1B)
+
+    static let neutral100 = Color(hex: 0xF9F4ED)
+    static let neutral200 = Color(hex: 0xEEE7DB)
+    static let neutral300 = Color(hex: 0xDCD3C4)
+    static let neutral400 = Color(hex: 0xC0B6A5)
+    static let neutral500 = Color(hex: 0xA19786)
+    static let neutral600 = Color(hex: 0x82796A)
+    static let neutral700 = Color(hex: 0x645C50)
+    static let neutral800 = Color(hex: 0x474238)
+    static let neutral900 = Color(hex: 0x2E2B25)
+
+    /// カードやチップの細い枠。インクの13%透過
+    static let hairline = ink.opacity(0.13)
+    /// 区切り線。枠よりさらに薄い
+    static let divider = ink.opacity(0.08)
+
+    /// 削除など後戻りできない操作の色。赤ではなくパレット内の濃いテラコッタ
+    static let danger = accent800
+
+    /// コレクションカードの地色。淡い面なので、上に載せる文字はインクのままで読める。
+    /// 既存データの colorIndex は 0〜7 が入りうるので、必ず [collectionColor] 経由で丸めること。
     static let collectionColors: [Color] = [
-        Color(hex: 0xFFE0B2), // オレンジ
-        Color(hex: 0xFFCDD2), // ピンク
-        Color(hex: 0xC8E6C9), // グリーン
-        Color(hex: 0xBBDEFB), // ブルー
-        Color(hex: 0xE1BEE7), // パープル
-        Color(hex: 0xFFF9C4), // イエロー
-        Color(hex: 0xB2DFDB), // ティール
-        Color(hex: 0xD7CCC8), // ブラウン
+        accent100, accent200, accent2_100, accent2_200, neutral200, neutral300,
     ]
 
     /// 負のインデックスでも巡回する（Kotlinの Int.mod 相当）
@@ -40,6 +73,47 @@ enum Palette {
         let count = collectionColors.count
         return collectionColors[((colorIndex % count) + count) % count]
     }
+}
+
+/// 影。デザイントークンの shadow-sm / md / lg。
+///
+/// SwiftUIの既定の影は黒でコントラストが強すぎるため、
+/// 地色に合わせた暖かいグレー（neutral-900）で落としている。
+enum Elevation {
+    case sm, md, lg
+
+    var radius: CGFloat {
+        switch self {
+        case .sm: return 2
+        case .md: return 6
+        case .lg: return 18
+        }
+    }
+
+    var y: CGFloat {
+        switch self {
+        case .sm: return 1
+        case .md: return 3
+        case .lg: return 8
+        }
+    }
+
+    var opacity: Double {
+        switch self {
+        case .sm: return 0.10
+        case .md: return 0.16
+        case .lg: return 0.22
+        }
+    }
+}
+
+/// 角丸。小さいコントロールはすべてピル（`Capsule`）にする
+enum Corner {
+    static let extraSmall: CGFloat = 8
+    static let small: CGFloat = 14
+    static let medium: CGFloat = 18
+    static let large: CGFloat = 22
+    static let extraLarge: CGFloat = 26
 }
 
 extension Color {
@@ -54,22 +128,14 @@ extension Color {
     }
 }
 
-/// Material3のカードに相当する白い角丸カード
-struct CardBackground: ViewModifier {
-    var cornerRadius: CGFloat = 12
-    var fill: Color = Palette.surface
-
-    func body(content: Content) -> some View {
-        content
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).fill(fill)
-            )
-            .shadow(color: Palette.slate.opacity(0.07), radius: 2, x: 0, y: 1)
-    }
-}
-
 extension View {
-    func cardBackground(cornerRadius: CGFloat = 12, fill: Color = Palette.surface) -> some View {
-        modifier(CardBackground(cornerRadius: cornerRadius, fill: fill))
+    /// デザイントークンの影
+    func softShadow(_ elevation: Elevation) -> some View {
+        shadow(
+            color: Palette.neutral900.opacity(elevation.opacity),
+            radius: elevation.radius,
+            x: 0,
+            y: elevation.y
+        )
     }
 }

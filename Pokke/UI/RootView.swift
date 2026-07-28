@@ -1,14 +1,21 @@
+import StoreKit
 import SwiftUI
 
-private let sampleLinks = [
-    "https://developer.apple.com/xcode/swiftui/",
-    "https://ja.wikipedia.org/wiki/%E8%AA%AD%E6%9B%B8",
-    "https://www.aozora.gr.jp/",
-    "https://blog.google/",
-]
+/// 画面の左右余白。全画面で共通の18pt
+let screenPadding: CGFloat = 18
 
-private enum Tab: Int, CaseIterable {
+/// ボトムナビの高さ。一覧の下端がナビに隠れないよう余白の計算にも使う
+private let navBarHeight: CGFloat = 68
+
+/// 一覧の下端に置く余白。
+/// ナビはコンテンツの上に浮いているので、その高さ＋少しの余白ぶん空ける
+/// （ホームインジケータぶんはScrollView自身のセーフエリアが持つ）
+let bottomContentPadding = navBarHeight + 16
+
+private enum RootTab: Int, CaseIterable, Identifiable {
     case home, collections, search, settings
+
+    var id: Int { rawValue }
 
     var titleKey: String {
         switch self {
@@ -19,25 +26,29 @@ private enum Tab: Int, CaseIterable {
         }
     }
 
-    /// Androidは絵文字アイコンだが、iOSのタブバーはSF Symbolsが標準の見え方なのでそちらに合わせる
-    var systemImage: String {
+    var icon: Lucide.Icon {
         switch self {
-        case .home: return "house"
-        case .collections: return "books.vertical"
-        case .search: return "magnifyingglass"
-        case .settings: return "gearshape"
+        case .home: return Lucide.house
+        case .collections: return Lucide.folder
+        case .search: return Lucide.search
+        case .settings: return Lucide.settings
         }
     }
 }
 
 struct RootView: View {
     @ObservedObject private var repository = StashRepository.shared
+    @ObservedObject private var prefs = AppPrefs.shared
+    @StateObject private var toast = ToastController()
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
 
-    @State private var tab: Tab = .home
+    @State private var tab: RootTab = .home
     @State private var showAdd = false
-    @State private var showCreateCollection = false
     @State private var detailId: String?
+    @State private var openedCollectionId: String?
+    /// 初回起動時は共有からの保存方法を案内する
+    @State private var showGuide = false
 
     private var state: StashState { repository.state }
 
@@ -46,34 +57,37 @@ struct RootView: View {
     }
 
     var body: some View {
-        TabView(selection: $tab) {
-            screen(.home) {
-                HomeScreen(
-                    state: state,
-                    onItemTap: { detailId = $0.id },
-                    onAddSamples: { sampleLinks.forEach { StashRepository.shared.addLink($0) } }
-                )
+        ZStack(alignment: .bottom) {
+            Palette.bg.ignoresSafeArea()
+
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            BottomNav(selected: tab) { next in
+                // 別のタブへ移ったらコレクション詳細のような下位の画面は畳む。
+                // 戻ってきたときに前回の続きが出ていると、今どこにいるのか分からなくなる
+                if next != tab { openedCollectionId = nil }
+                tab = next
             }
-            screen(.collections) {
-                CollectionsScreen(
-                    state: state,
-                    onItemTap: { detailId = $0.id },
-                    showCreate: $showCreateCollection
-                )
-            }
-            screen(.search) {
-                SearchScreen(state: state, onItemTap: { detailId = $0.id })
-            }
-            screen(.settings) {
-                SettingsScreen()
+
+            ToastHost(controller: toast)
+
+            if showGuide {
+                OnboardingDialog {
+                    showGuide = false
+                    AppPrefs.shared.markOnboarded()
+                }
             }
         }
-        .tint(Palette.primary)
+        .animation(.easeOut(duration: 0.2), value: showGuide)
+        .environmentObject(toast)
         // Android版が lightColorScheme 固定なので、見た目を揃えるためライトに固定する
         .preferredColorScheme(.light)
         .sheet(isPresented: $showAdd) {
-            AddLinkSheet { url in
-                StashRepository.shared.addLink(url) != nil
+            SaveLinkSheet { url in
+                let added = StashRepository.shared.addLink(url) != nil
+                if added { toast.show(L.s("toast_saved")) }
+                return added
             }
         }
         .sheet(item: Binding(
@@ -81,26 +95,127 @@ struct RootView: View {
             set: { if $0 == nil { detailId = nil } }
         )) { item in
             DetailSheet(item: item, collections: state.collections)
+                .environmentObject(toast)
+        }
+        .onAppear {
+            if AppPrefs.shared.needsOnboarding { showGuide = true }
         }
         .onChange(of: scenePhase) { _, phase in
             // 共有拡張が別プロセスで書き足した分をここで拾う
-            if phase == .active { repository.reloadFromDisk() }
+            if phase == .active {
+                repository.reloadFromDisk()
+                // 読み直した後に見るので、共有シート経由で貯めた分も件数に入る
+                maybeRequestReview()
+            }
         }
     }
 
-    /// タブ1枚分。「＋」ボタンはホーム/コレクションでだけ出す（Android版のFABと同じ）
-    private func screen<Content: View>(
-        _ item: Tab,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ZStack(alignment: .bottomTrailing) {
-            Palette.appBackground.ignoresSafeArea()
-            content()
-            if item == .home || item == .collections {
-                AddButton { showAdd = true }
-            }
+    /// 使い込んでくれている人にだけ、Apple純正の星評価ダイアログを出す。
+    ///
+    /// 起動直後に重ねると操作を遮るので、画面が落ち着くまで少し待つ。
+    /// 初回案内が出ている間は譲る（条件的にほぼ重ならないが、重なると案内が隠れる）
+    private func maybeRequestReview() {
+        guard !showGuide else { return }
+        guard ReviewPrompt.shouldRequest(
+            itemCount: state.items.count,
+            firstLaunchAt: prefs.firstLaunchAt,
+            alreadyRequested: prefs.reviewRequested
+        ) else { return }
+
+        // 出したこと自体は即座に記録する。ダイアログはOSの判断で出ないこともあり、
+        // 記録を遅らせると起動のたびに何度も声をかけることになる
+        prefs.markReviewRequested()
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            requestReview()
         }
-        .tabItem { Label(L.s(item.titleKey), systemImage: item.systemImage) }
-        .tag(item)
     }
+
+    @ViewBuilder
+    private var content: some View {
+        switch tab {
+        case .home:
+            HomeScreen(
+                state: state,
+                onItemTap: { detailId = $0.id },
+                onShowGuide: { showGuide = true },
+                onAddLink: { showAdd = true }
+            )
+        case .collections:
+            CollectionsScreen(
+                state: state,
+                openedCollectionId: $openedCollectionId,
+                onItemTap: { detailId = $0.id },
+                onBrowseLinks: {
+                    openedCollectionId = nil
+                    tab = .home
+                }
+            )
+        case .search:
+            SearchScreen(state: state, onItemTap: { detailId = $0.id })
+        case .settings:
+            SettingsScreen(onShowGuide: { showGuide = true })
+        }
+    }
+}
+
+/// ボトムナビ。コンテンツの上に浮かせているので、地は白の半透明にして
+/// 下に何かあることが分かるようにしている。
+private struct BottomNav: View {
+    let selected: RootTab
+    let onSelect: (RootTab) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
+            HStack(spacing: 4) {
+                ForEach(RootTab.allCases) { item in
+                    NavItem(
+                        icon: item.icon,
+                        label: L.s(item.titleKey),
+                        selected: selected == item
+                    ) { onSelect(item) }
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
+            .padding(.bottom, 10)
+        }
+        // ホームインジケータの帯まで地を伸ばす。ここが透けると下の文字と重なって読めない
+        .background {
+            Palette.surface.opacity(0.92).ignoresSafeArea(edges: .bottom)
+        }
+    }
+}
+
+private struct NavItem: View {
+    let icon: Lucide.Icon
+    let label: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                LucideIconView(icon: icon, size: 21, color: color)
+                Text(label)
+                    .font(PokkeType.labelSmall)
+                    .foregroundStyle(color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 7)
+            .padding(.bottom, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(selected ? Palette.accent100 : Color.clear)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
+    }
+
+    private var color: Color { selected ? Palette.accent800 : Palette.neutral600 }
 }

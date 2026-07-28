@@ -1,26 +1,13 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
+    "・" : {
 
     },
-    "%@ %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@"
-          }
-        }
-      }
-    },
-    "＋" : {
+    "#%@" : {
 
     },
-    "✓" : {
-
-    },
-    "🔍" : {
+    "%lld" : {
 
     },
     "action_add" : {
@@ -36,6 +23,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "追加"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "추가"
           }
         }
       }
@@ -54,6 +47,12 @@
             "state" : "translated",
             "value" : "戻る"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "뒤로"
+          }
         }
       }
     },
@@ -70,6 +69,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "キャンセル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "취소"
+          }
+        }
+      }
+    },
+    "action_close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "닫기"
           }
         }
       }
@@ -88,6 +116,12 @@
             "state" : "translated",
             "value" : "作成"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "만들기"
+          }
         }
       }
     },
@@ -104,6 +138,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "削除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "삭제"
           }
         }
       }
@@ -122,6 +162,12 @@
             "state" : "translated",
             "value" : "開く"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "열기"
+          }
         }
       }
     },
@@ -139,6 +185,35 @@
             "state" : "translated",
             "value" : "保存"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장"
+          }
+        }
+      }
+    },
+    "ad_badge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "広告"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "광고"
+          }
         }
       }
     },
@@ -148,13 +223,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "That doesn’t look like a URL"
+            "value" : "That doesn't look like a URL"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "URLとして認識できませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL로 인식하지 못했습니다"
           }
         }
       }
@@ -173,22 +254,11 @@
             "state" : "translated",
             "value" : "https://…"
           }
-        }
-      }
-    },
-    "add_link_share_hint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can also save links by choosing “Save to Pokke” from another app’s share sheet"
-          }
         },
-        "ja" : {
+        "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "他のアプリの共有シートから「Pokkeに保存」でも追加できます"
+            "value" : "https://…"
           }
         }
       }
@@ -207,22 +277,34 @@
             "state" : "translated",
             "value" : "リンクを保存"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "링크 저장"
+          }
         }
       }
     },
-    "add_samples" : {
+    "collection_browse_links" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add sample links"
+            "value" : "Browse links"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "サンプルのリンクを追加"
+            "value" : "リンクを見にいく"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "링크 보러 가기"
           }
         }
       }
@@ -241,39 +323,103 @@
             "state" : "translated",
             "value" : "カラー"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "색상"
+          }
         }
       }
     },
-    "collection_emoji" : {
+    "collection_edit" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Emoji"
+            "value" : "Edit collection"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "絵文字"
+            "value" : "コレクションを編集"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컬렉션 편집"
           }
         }
       }
     },
-    "collection_empty" : {
+    "collection_empty_description" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This collection is empty.\nAdd links from a link’s detail view."
+            "value" : "Open a link and use its “Collection” section to add it here."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このコレクションはまだ空です。\nアイテム詳細から追加できます。"
+            "value" : "リンクの詳細画面にある「コレクション」から、このコレクションに追加できます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "링크 상세 화면의 “컬렉션”에서 이 컬렉션에 추가할 수 있습니다"
+          }
+        }
+      }
+    },
+    "collection_empty_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing here yet"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだ何も入っていません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 아무것도 없습니다"
+          }
+        }
+      }
+    },
+    "collection_icon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icon"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アイコン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아이콘"
           }
         }
       }
@@ -292,6 +438,12 @@
             "state" : "translated",
             "value" : "名前（例: あとで読む記事）"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이름 (예: 나중에 읽을 글)"
+          }
         }
       }
     },
@@ -308,6 +460,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新しいコレクション"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 컬렉션"
           }
         }
       }
@@ -326,6 +484,12 @@
             "state" : "translated",
             "value" : "コレクション名"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컬렉션 이름"
+          }
         }
       }
     },
@@ -342,6 +506,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "コレクション"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컬렉션"
           }
         }
       }
@@ -360,6 +530,12 @@
             "state" : "translated",
             "value" : "削除しますか？"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "삭제할까요?"
+          }
         }
       }
     },
@@ -376,6 +552,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "タグを追加"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "태그 추가"
           }
         }
       }
@@ -394,6 +576,12 @@
             "state" : "translated",
             "value" : "アーカイブ"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보관"
+          }
         }
       }
     },
@@ -410,6 +598,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "コレクション"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컬렉션"
           }
         }
       }
@@ -428,6 +622,12 @@
             "state" : "translated",
             "value" : "%1$@ ・ %2$@に保存"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ ・ %2$@ 저장"
+          }
         }
       }
     },
@@ -444,6 +644,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "コレクションはまだありません（コレクションタブで作成）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컬렉션이 아직 없습니다 (컬렉션 탭에서 만들 수 있습니다)"
+          }
+        }
+      }
+    },
+    "detail_refetch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reload title and preview"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルとプレビューを再取得"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제목과 미리보기 다시 가져오기"
           }
         }
       }
@@ -480,6 +709,110 @@
               }
             }
           }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld번 다시 열람"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "detail_save_image" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save image"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像を保存"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이미지 저장"
+          }
+        }
+      }
+    },
+    "detail_share" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "공유"
+          }
+        }
+      }
+    },
+    "detail_show_less" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show less"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "접기"
+          }
+        }
+      }
+    },
+    "detail_show_more" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show more"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "続きを読む"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "더 보기"
+          }
         }
       }
     },
@@ -497,6 +830,35 @@
             "state" : "translated",
             "value" : "タグ"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "태그"
+          }
+        }
+      }
+    },
+    "detail_tap_to_expand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to expand"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タップで拡大"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "탭하면 확대"
+          }
         }
       }
     },
@@ -506,13 +868,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mark as unread"
+            "value" : "Unarchive"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "未読に戻す"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "되돌리기"
           }
         }
       }
@@ -531,6 +899,12 @@
             "state" : "translated",
             "value" : "不明なエラー"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알 수 없는 오류"
+          }
         }
       }
     },
@@ -540,13 +914,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Archived %1$lld"
+            "value" : "Archive"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アーカイブ %1$lld"
+            "value" : "アーカイブ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보관함"
           }
         }
       }
@@ -557,47 +937,42 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unread %1$lld"
+            "value" : "Unread"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未読 %1$lld"
+            "value" : "未読"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "읽지 않음"
           }
         }
       }
     },
-    "group_by_site" : {
+    "group_by_service" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Group by site"
+            "value" : "Group by service"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自動で分類"
-          }
-        }
-      }
-    },
-    "group_header" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ %2$@ (%3$lld)"
+            "value" : "サービスで分類"
           }
         },
-        "ja" : {
+        "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ %2$@（%3$lld）"
+            "value" : "서비스별로 분류"
           }
         }
       }
@@ -608,13 +983,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save a link you want to read later"
+            "value" : "Nothing saved yet"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "気になるリンクを保存してみましょう"
+            "value" : "まだ何も保存されていません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 저장한 링크가 없습니다"
           }
         }
       }
@@ -632,6 +1013,81 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "アーカイブはまだありません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보관한 링크가 아직 없습니다"
+          }
+        }
+      }
+    },
+    "home_empty_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Found something worth reading? Tap Share in any app and choose “Save to Pokke”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "気になる記事や動画を見つけたら、共有ボタンから「Pokkeに保存」を選ぶだけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "읽고 싶은 글이나 영상을 찾았다면, 공유 버튼에서 “Pokke에 저장”을 고르기만 하면 됩니다."
+          }
+        }
+      }
+    },
+    "image_save_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the image"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像を保存できませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이미지를 저장하지 못했습니다"
+          }
+        }
+      }
+    },
+    "image_saved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved to Pictures/Pokke"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pictures/Pokke に保存しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pictures/Pokke에 저장했습니다"
           }
         }
       }
@@ -668,6 +1124,18 @@
               }
             }
           }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld개"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -685,11 +1153,296 @@
             "state" : "translated",
             "value" : "%1$@ ・ %2$@"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ ・ %2$@"
+          }
+        }
+      }
+    },
+    "onboarding_footnote" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can also paste a URL with the ＋ button any time."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ボタンからURLを貼り付けて保存することもできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ 버튼으로 URL을 붙여넣어 저장할 수도 있습니다."
+          }
+        }
+      }
+    },
+    "onboarding_got_it" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "わかりました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알겠습니다"
+          }
+        }
+      }
+    },
+    "onboarding_lead" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke picks up links from other apps' share sheets, so you never have to copy and paste a URL."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokkeは他のアプリの共有シートからリンクを受け取ります。URLをコピペする必要はありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke는 다른 앱의 공유 시트에서 링크를 받아옵니다. URL을 복사해 붙여넣을 필요가 없습니다."
+          }
+        }
+      }
+    },
+    "onboarding_show_guide" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to save links"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存のしかたを見る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장하는 방법 보기"
+          }
+        }
+      }
+    },
+    "onboarding_step1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find an article or video you want to read later"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あとで読みたい記事や動画を見つける"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나중에 읽고 싶은 글이나 영상을 찾습니다"
+          }
+        }
+      }
+    },
+    "onboarding_step2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the share button and choose “Save to Pokke”"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有ボタンを押して「Pokkeに保存」を選ぶ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "공유 버튼을 눌러 “Pokke에 저장”을 고릅니다"
+          }
+        }
+      }
+    },
+    "onboarding_step3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You go straight back to what you were doing — the link is already saved"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面はすぐ元に戻り、リンクは保存済み"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "화면은 바로 원래대로, 링크는 이미 저장되어 있습니다"
+          }
+        }
+      }
+    },
+    "onboarding_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save from any app"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "他のアプリから保存"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 앱에서 저장하기"
+          }
         }
       }
     },
     "Pokke" : {
 
+    },
+    "Pokke %@" : {
+
+    },
+    "save_link_lead" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The easiest way to save"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いちばんかんたんな保存方法"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가장 간단한 저장 방법"
+          }
+        }
+      }
+    },
+    "save_link_or_paste" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can also paste a URL directly"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URLを直接貼り付けても保存できます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL을 직접 붙여넣어도 저장할 수 있습니다"
+          }
+        }
+      }
+    },
+    "save_link_steps" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just pick “Pokke” from any app's share menu — no need to open the app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "他のアプリの共有メニューから「Pokke」を選ぶだけ。アプリを開かなくても保存できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 앱의 공유 메뉴에서 “Pokke”를 고르기만 하면 됩니다. 앱을 열지 않아도 저장됩니다."
+          }
+        }
+      }
+    },
+    "save_link_submit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장하기"
+          }
+        }
+      }
     },
     "search_empty_nothing_saved" : {
       "extractionState" : "manual",
@@ -704,6 +1457,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "まだ何も保存されていません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 저장한 링크가 없습니다"
           }
         }
       }
@@ -722,6 +1481,12 @@
             "state" : "translated",
             "value" : "見つかりませんでした"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "찾지 못했습니다"
+          }
         }
       }
     },
@@ -738,6 +1503,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "タイトル・URL・タグで検索"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제목·URL·태그로 검색"
+          }
+        }
+      }
+    },
+    "search_recent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently saved"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近保存したリンク"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "최근 저장한 링크"
+          }
+        }
+      }
+    },
+    "search_results_count" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld results"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld件ヒットしました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld개를 찾았습니다"
           }
         }
       }
@@ -756,6 +1573,58 @@
             "state" : "translated",
             "value" : "検索"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "검색"
+          }
+        }
+      }
+    },
+    "service_tab_all" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "전체"
+          }
+        }
+      }
+    },
+    "service_tab_other" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "その他"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기타"
+          }
         }
       }
     },
@@ -772,6 +1641,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "アカウント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정"
           }
         }
       }
@@ -790,6 +1665,12 @@
             "state" : "translated",
             "value" : "広告のプライバシー設定"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "광고 개인정보 설정"
+          }
         }
       }
     },
@@ -806,6 +1687,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "広告"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "광고"
           }
         }
       }
@@ -824,6 +1711,12 @@
             "state" : "translated",
             "value" : "クラウド同期"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "클라우드 동기화"
+          }
         }
       }
     },
@@ -833,13 +1726,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "⚠️ Firebase setup is incomplete. Register an iOS app in the Firebase console and place GoogleService-Info.plist in Pokke/ to turn on sign-in."
+            "value" : "⚠️ Firebase setup is incomplete. Enable Google sign-in in the Firebase console and place google-services.json in app/ to turn on sign-in."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "⚠️ Firebaseの設定が未完了です。Firebase ConsoleでiOSアプリを登録し、GoogleService-Info.plist を Pokke/ に配置するとログインが有効になります。"
+            "value" : "⚠️ Firebaseの設定が未完了です。Firebase ConsoleでGoogleログインを有効にし、google-services.json を app/ に配置するとログインが有効になります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚠️ Firebase 설정이 완료되지 않았습니다. Firebase Console에서 Google 로그인을 켜고 google-services.json을 app/ 에 두면 로그인을 쓸 수 있습니다."
           }
         }
       }
@@ -858,6 +1757,104 @@
             "state" : "translated",
             "value" : "Googleアカウント"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 계정"
+          }
+        }
+      }
+    },
+    "settings_how_to_save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to save links"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存のしかたを見る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장하는 방법 보기"
+          }
+        }
+      }
+    },
+    "settings_open_in_app" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open links in Pokke"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リンクをアプリ内で開く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "링크를 앱 안에서 열기"
+          }
+        }
+      }
+    },
+    "settings_open_in_app_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens links in an in-app browser. Because it shares your browser's sign-in state, posts on X and Instagram show up as they normally would."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリ内ブラウザで開きます。ブラウザのログイン状態を引き継ぐので、XやInstagramの投稿もそのまま表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "앱 내 브라우저로 엽니다. 브라우저의 로그인 상태를 그대로 쓰기 때문에 X나 Instagram의 게시물도 평소처럼 보입니다."
+          }
+        }
+      }
+    },
+    "settings_reading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読む"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "읽기"
+          }
         }
       }
     },
@@ -874,6 +1871,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Googleでログイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google로 로그인"
           }
         }
       }
@@ -892,6 +1895,12 @@
             "state" : "translated",
             "value" : "Googleでログインすると、保存したリンクが端末間で同期されます"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google로 로그인하면 저장한 링크가 기기 간에 동기화됩니다"
+          }
         }
       }
     },
@@ -908,6 +1917,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "サインアウト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그아웃"
           }
         }
       }
@@ -926,6 +1941,12 @@
             "state" : "translated",
             "value" : "今すぐ同期"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지금 동기화"
+          }
         }
       }
     },
@@ -942,6 +1963,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정"
           }
         }
       }
@@ -960,6 +1987,12 @@
             "state" : "translated",
             "value" : "URLが見つかりませんでした"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL을 찾지 못했습니다"
+          }
         }
       }
     },
@@ -976,6 +2009,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pokkeに保存しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke에 저장했습니다"
           }
         }
       }
@@ -994,6 +2033,12 @@
             "state" : "translated",
             "value" : "ログインに失敗しました（Firebase認証）"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인에 실패했습니다 (Firebase 인증)"
+          }
         }
       }
     },
@@ -1010,6 +2055,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ログインに失敗しました：%1$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인에 실패했습니다: %1$@"
           }
         }
       }
@@ -1028,6 +2079,35 @@
             "state" : "translated",
             "value" : "ログインに失敗しました（IDトークンなし）"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인에 실패했습니다 (ID 토큰 없음)"
+          }
+        }
+      }
+    },
+    "sign_in_error_status" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign-in failed (%1$@)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログインに失敗しました（%1$@）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인에 실패했습니다 (%1$@)"
+          }
         }
       }
     },
@@ -1044,6 +2124,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同期に失敗しました：%1$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동기화에 실패했습니다: %1$@"
           }
         }
       }
@@ -1062,6 +2148,12 @@
             "state" : "translated",
             "value" : "同期を拒否されました。Firestoreのセキュリティルールで users/{uid} の読み書きを許可してください"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동기화가 거부되었습니다. Firestore 보안 규칙에서 users/{uid} 의 읽기·쓰기를 허용해 주세요"
+          }
         }
       }
     },
@@ -1078,6 +2170,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "データが大きすぎて同期できません（不要なリンクを削除してください）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "데이터가 너무 커서 동기화할 수 없습니다 (필요 없는 링크를 지워 주세요)"
           }
         }
       }
@@ -1096,6 +2194,12 @@
             "state" : "translated",
             "value" : "認証の期限が切れました。サインインし直してください"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인증이 만료되었습니다. 다시 로그인해 주세요"
+          }
         }
       }
     },
@@ -1105,13 +2209,42 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You’re offline, so syncing is paused. It will resume automatically when you reconnect."
+            "value" : "You're offline, so syncing is paused. It will resume automatically when you reconnect."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "オフラインのため同期を保留中です。接続が戻ると自動で再開します"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "오프라인이라 동기화를 보류 중입니다. 연결이 돌아오면 자동으로 다시 시작합니다"
+          }
+        }
+      }
+    },
+    "sync_needs_sign_in" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld links and %2$lld collections on this device. Sign in to sync them."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リンク%1$lld件・コレクション%2$lld件をこの端末に保管中。ログインすると同期されます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "링크 %1$lld개・컬렉션 %2$lld개를 이 기기에 보관 중. 로그인하면 동기화됩니다"
           }
         }
       }
@@ -1130,6 +2263,12 @@
             "state" : "translated",
             "value" : "リンク%1$lld件・コレクション%2$lld件をこのアカウントに保管中"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "링크 %1$lld개・컬렉션 %2$lld개를 이 계정에 보관 중"
+          }
         }
       }
     },
@@ -1146,6 +2285,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "サーバーの内容を確認中…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "서버 내용을 확인하는 중…"
           }
         }
       }
@@ -1164,6 +2309,12 @@
             "state" : "translated",
             "value" : "同期していません"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동기화하지 않음"
+          }
         }
       }
     },
@@ -1173,13 +2324,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting to send (offline). It will resume automatically once you’re back online."
+            "value" : "Waiting to send (offline). It will resume automatically once you're back online."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "オフラインのため送信待ち（接続が戻ると自動で送信します）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "오프라인이라 전송 대기 중입니다 (연결이 돌아오면 자동으로 보냅니다)"
           }
         }
       }
@@ -1198,6 +2355,12 @@
             "state" : "translated",
             "value" : "同期済み（%1$@）"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동기화됨 (%1$@)"
+          }
         }
       }
     },
@@ -1214,6 +2377,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同期中…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동기화 중…"
           }
         }
       }
@@ -1232,6 +2401,12 @@
             "state" : "translated",
             "value" : "コレクション"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컬렉션"
+          }
         }
       }
     },
@@ -1248,6 +2423,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ホーム"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "홈"
           }
         }
       }
@@ -1266,6 +2447,12 @@
             "state" : "translated",
             "value" : "検索"
           }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "검색"
+          }
         }
       }
     },
@@ -1282,6 +2469,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정"
           }
         }
       }
@@ -1314,6 +2507,18 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld日前"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld일 전"
                 }
               }
             }
@@ -1353,6 +2558,18 @@
               }
             }
           }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld시간 전"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1369,6 +2586,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "たった今"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "방금 전"
           }
         }
       }
@@ -1404,6 +2627,179 @@
                 }
               }
             }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld분 전"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "toast_archived" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archived"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アーカイブしました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보관했습니다"
+          }
+        }
+      }
+    },
+    "toast_created" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Created"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作成しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "만들었습니다"
+          }
+        }
+      }
+    },
+    "toast_deleted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleted"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "削除しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "삭제했습니다"
+          }
+        }
+      }
+    },
+    "toast_saved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장했습니다"
+          }
+        }
+      }
+    },
+    "toast_unarchived" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved back to unread"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未読に戻しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "읽지 않음으로 되돌렸습니다"
+          }
+        }
+      }
+    },
+    "view_grid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grid view"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グリッド表示"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그리드 보기"
+          }
+        }
+      }
+    },
+    "view_list" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List view"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リスト表示"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "목록 보기"
           }
         }
       }

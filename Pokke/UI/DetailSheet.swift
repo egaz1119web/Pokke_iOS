@@ -3,102 +3,194 @@ import SwiftUI
 /// アイテム詳細のボトムシート
 struct DetailSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var toast: ToastController
+
     let item: StashItem
     let collections: [StashCollection]
 
     @State private var tagInput = ""
+    @State private var showDeleteConfirm = false
+    @State private var showImageViewer = false
+    @State private var savingImage = false
+    @FocusState private var tagFieldFocused: Bool
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                SheetHandle()
                 header
 
-                HStack(spacing: 8) {
-                    Button {
-                        openLink(item)
-                        dismiss()
-                    } label: {
-                        Text(L.s("action_open"))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Palette.primary)
-
-                    Button {
-                        StashRepository.shared.setArchived(id: item.id, archived: !item.archived)
-                        dismiss()
-                    } label: {
-                        Text(L.s(item.archived ? "detail_unarchive" : "detail_archive"))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(Palette.primary)
+                // ボタンは本文・画像より先に置く。長い本文や大きい画像を先に出すと
+                // 主要な操作がスクロールしないと届かなくなる
+                PrimaryButton(title: L.s("action_open"), icon: Lucide.externalLink) {
+                    openLink(item)
+                    dismiss()
                 }
                 .padding(.top, 16)
 
-                Text(L.s("detail_collections"))
-                    .font(.subheadline.weight(.medium))
-                    .padding(.top, 20)
-                    .padding(.bottom, 8)
-                collectionChips
+                actions.padding(.top, 10)
 
-                Text(L.s("detail_tags"))
-                    .font(.subheadline.weight(.medium))
-                    .padding(.top, 20)
-                    .padding(.bottom, 8)
-                tagSection
+                // 保存時に通信できなかった等でサムネイル・本文が空のままの場合の救済
+                if item.imageUrl == nil || item.description == nil {
+                    TextLink(text: L.s("detail_refetch"), icon: Lucide.refreshCw) {
+                        StashRepository.shared.refetchMetadata(itemId: item.id)
+                    }
+                    .padding(.top, 12)
+                }
+
+                // SNSの投稿ではog:descriptionに本文が入る。記事ならリード文。
+                // 長い場合は畳んでおき、タップで開く
+                if let description = item.description {
+                    ExpandableText(text: description).padding(.top, 16)
+                }
+
+                if let imageUrl = item.imageUrl {
+                    preview(imageUrl: imageUrl).padding(.top, 14)
+                }
+
+                collectionSection.padding(.top, 18)
+                tagSection.padding(.top, 18)
+
+                Spacer(minLength: 26)
             }
             .padding(.horizontal, 20)
-            .padding(.top, 24)
-            .padding(.bottom, 24)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Palette.appBackground)
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
+        .frame(maxWidth: .infinity)
+        .background(Palette.bg)
+        .presentationDragIndicator(.hidden)
+        .presentationBackground(Palette.bg)
+        // 中間の高さ（半開き）で止まると、内側のスクロールとシートのドラッグが
+        // 取り合って引っかかる。常に全開にして競合を無くす。
+        // ただし上は必ず残す（元の一覧が見えないと「閉じれば戻れる」感覚が消える）
+        .presentationDetents([.fraction(0.82)])
+        .alert(L.s("delete_link_title"), isPresented: $showDeleteConfirm) {
+            Button(L.s("action_cancel"), role: .cancel) {}
+            Button(L.s("action_delete"), role: .destructive) {
+                StashRepository.shared.deleteItem(id: item.id)
+                toast.show(L.s("toast_deleted"))
+                dismiss()
+            }
+        } message: {
+            Text(item.title)
+        }
+        .fullScreenCover(isPresented: $showImageViewer) {
+            if let imageUrl = item.imageUrl {
+                ImageViewerView(
+                    imageUrl: imageUrl,
+                    onDismiss: { showImageViewer = false },
+                    onSave: { saveImage(imageUrl) }
+                )
+                .presentationBackground(.clear)
+            }
+        }
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Thumbnail(item: item, size: 72, corner: 14)
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 13) {
+            Thumbnail(item: item, size: 58, corner: 16)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
-                    .font(.headline)
-                    .foregroundStyle(Palette.onSurface)
+                    .font(PokkeType.titleSmall)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Text(L.s("detail_meta", item.siteName ?? item.host, relativeTime(item.savedAt)))
-                    .font(.caption)
-                    .foregroundStyle(Palette.onSurfaceVariant)
+                    .font(PokkeType.bodySmall)
+                    .foregroundStyle(Palette.neutral600)
                 if item.openCount > 0 {
                     Text(L.plural("detail_reopen_count", item.openCount))
-                        .font(.caption)
-                        .foregroundStyle(Palette.secondary)
+                        .font(PokkeType.bodySmall)
+                        .foregroundStyle(Palette.accent2_600)
                 }
             }
             Spacer(minLength: 0)
         }
     }
 
-    @ViewBuilder
-    private var collectionChips: some View {
-        if collections.isEmpty {
-            Text(L.s("detail_no_collections"))
-                .font(.caption)
-                .foregroundStyle(Palette.onSurfaceVariant)
-        } else {
-            FlowLayout(spacing: 6) {
-                ForEach(collections) { collection in
-                    let selected = item.collectionId == collection.id
-                    // 選択中の色差だけだと分かりにくいのでチェックを足す
-                    FilterChipView(
-                        label: (selected ? "✓ " : "") + "\(collection.emoji) \(collection.name)",
-                        selected: selected
-                    ) {
-                        var updated = item
-                        updated.collectionId = selected ? nil : collection.id
-                        StashRepository.shared.updateItem(updated)
+    private var actions: some View {
+        HStack(spacing: 8) {
+            StackedActionButton(
+                icon: Lucide.archive,
+                label: L.s(item.archived ? "detail_unarchive" : "detail_archive")
+            ) {
+                StashRepository.shared.setArchived(id: item.id, archived: !item.archived)
+                toast.show(L.s(item.archived ? "toast_unarchived" : "toast_archived"))
+                dismiss()
+            }
+            // URLのコピーは共有シート側にあるので置いていない
+            StackedActionButton(icon: Lucide.share, label: L.s("detail_share")) {
+                shareLink(item)
+            }
+            StackedActionButton(
+                icon: Lucide.download,
+                label: L.s("action_save"),
+                // 画像が無ければ保存しようがないので押せなくする
+                enabled: item.imageUrl != nil && !savingImage
+            ) {
+                if let imageUrl = item.imageUrl { saveImage(imageUrl) }
+            }
+            StackedActionButton(
+                icon: Lucide.trash,
+                label: L.s("action_delete"),
+                contentColor: Palette.danger,
+                borderColor: Palette.danger.opacity(0.3)
+            ) {
+                showDeleteConfirm = true
+            }
+        }
+    }
+
+    private func preview(imageUrl: String) -> some View {
+        Button {
+            showImageViewer = true
+        } label: {
+            ZStack {
+                ServiceVisual.of(host: item.host).tint
+                AsyncImage(url: URL(string: imageUrl)) { phase in
+                    if let image = phase.image {
+                        // 切り抜かずに全体を見せる。Instagramの正方形画像などを
+                        // 切り抜くと一部しか見えない
+                        image.resizable().scaledToFit()
+                    } else {
+                        Color.clear
+                    }
+                }
+            }
+            // 高さを固定する。可変にすると画像の読み込み完了時に
+            // シートの高さが変わり、スクロール位置が飛んで引っかかる
+            .frame(height: 170)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(alignment: .bottomTrailing) {
+                TapToExpandHint().padding(10)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var collectionSection: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text(L.s("detail_collections"))
+                .font(PokkeType.labelMedium)
+                .foregroundStyle(Palette.neutral700)
+            if collections.isEmpty {
+                Text(L.s("detail_no_collections"))
+                    .font(PokkeType.bodySmall)
+                    .foregroundStyle(Palette.neutral600)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                FlowLayout(spacing: 8) {
+                    ForEach(collections) { collection in
+                        CollectionChip(
+                            collection: collection,
+                            selected: item.collectionId == collection.id
+                        ) {
+                            var updated = item
+                            updated.collectionId = item.collectionId == collection.id ? nil : collection.id
+                            StashRepository.shared.updateItem(updated)
+                        }
                     }
                 }
             }
@@ -106,11 +198,15 @@ struct DetailSheet: View {
     }
 
     private var tagSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 9) {
+            Text(L.s("detail_tags"))
+                .font(PokkeType.labelMedium)
+                .foregroundStyle(Palette.neutral700)
+
             if !item.tags.isEmpty {
-                FlowLayout(spacing: 6) {
+                FlowLayout(spacing: 8) {
                     ForEach(item.tags, id: \.self) { tag in
-                        FilterChipView(label: "#\(tag) ✕", selected: false) {
+                        TagChip(tag: tag) {
                             var updated = item
                             updated.tags.removeAll { $0 == tag }
                             StashRepository.shared.updateItem(updated)
@@ -118,83 +214,126 @@ struct DetailSheet: View {
                     }
                 }
             }
+
             HStack(spacing: 8) {
-                TextField(L.s("detail_add_tag"), text: $tagInput)
-                    .textFieldStyle(.roundedBorder)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onSubmit(addTag)
-                Button(L.s("action_add"), action: addTag)
-                    .disabled(tagInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                PillField(focused: tagFieldFocused, height: 44) {
+                    LucideIconView(icon: Lucide.tag, size: 15, color: Palette.neutral500)
+                    TextField(L.s("detail_add_tag"), text: $tagInput)
+                        .font(PokkeType.labelLarge)
+                        .foregroundStyle(Palette.ink)
+                        .tint(Palette.accent)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                        .focused($tagFieldFocused)
+                        .onSubmit(addTag)
+                }
+                Button(action: addTag) {
+                    Text(L.s("action_add"))
+                        .font(PokkeType.labelLarge)
+                        .foregroundStyle(Palette.accent700)
+                        .padding(.horizontal, 8)
+                        .frame(height: 44)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 
     private func addTag() {
-        var tag = tagInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        if tag.hasPrefix("#") { tag = String(tag.dropFirst()) }
-        if !tag.isEmpty && !item.tags.contains(tag) {
+        let tag = tagInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "^#", with: "", options: .regularExpression)
+        if !tag.isEmpty, !item.tags.contains(tag) {
             var updated = item
             updated.tags.append(tag)
             StashRepository.shared.updateItem(updated)
         }
         tagInput = ""
     }
+
+    /// 保存の結果はトーストで知らせる。ダウンロード中は二重タップを防ぐ
+    private func saveImage(_ imageUrl: String) {
+        savingImage = true
+        Task {
+            let ok = await ImageSaver.saveToPhotos(imageUrl: imageUrl, title: item.title)
+            savingImage = false
+            toast.show(L.s(ok ? "image_saved" : "image_save_failed"))
+        }
+    }
 }
 
-/// ComposeのFlowRow相当。入りきらなくなったら折り返す横並び
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 6
+/// 所属中は淡いテラコッタ地＋枠。タップで出し入れする
+private struct CollectionChip: View {
+    let collection: StashCollection
+    let selected: Bool
+    let action: () -> Void
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        let rows = layout(subviews: subviews, maxWidth: maxWidth)
-        let height = rows.reduce(0) { $0 + $1.height } + spacing * CGFloat(max(0, rows.count - 1))
-        let width = rows.map(\.width).max() ?? 0
-        return CGSize(width: min(width, maxWidth), height: height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var y = bounds.minY
-        for row in layout(subviews: subviews, maxWidth: bounds.width) {
-            var x = bounds.minX
-            for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
-                subviews[index].place(
-                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
-                    proposal: ProposedViewSize(size)
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                LucideIconView(
+                    icon: Lucide.collectionIcon(collection.icon),
+                    size: 14,
+                    color: color
                 )
-                x += size.width + spacing
+                Text(collection.name)
+                    .font(PokkeType.labelMedium)
+                    .foregroundStyle(color)
+                    .lineLimit(1)
             }
-            y += row.height + spacing
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .background(Capsule().fill(selected ? Palette.accent100 : Palette.surface))
+            .overlay(Capsule().stroke(selected ? Palette.accent : Palette.hairline, lineWidth: 1.5))
+            .contentShape(Capsule())
         }
+        .buttonStyle(.pressScale(0.95))
     }
 
-    private struct Row {
-        var indices: [Int] = []
-        var width: CGFloat = 0
-        var height: CGFloat = 0
-    }
+    private var color: Color { selected ? Palette.accent800 : Palette.neutral700 }
+}
 
-    private func layout(subviews: Subviews, maxWidth: CGFloat) -> [Row] {
-        var rows: [Row] = []
-        var current = Row()
-        for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
-            let needed = current.indices.isEmpty ? size.width : current.width + spacing + size.width
-            if !current.indices.isEmpty && needed > maxWidth {
-                rows.append(current)
-                current = Row()
-                current.indices = [index]
-                current.width = size.width
-                current.height = size.height
-            } else {
-                current.indices.append(index)
-                current.width = needed
-                current.height = max(current.height, size.height)
+/// 「#タグ ✕」。タップすると外れる
+private struct TagChip: View {
+    let tag: String
+    let onRemove: () -> Void
+
+    var body: some View {
+        Button(action: onRemove) {
+            HStack(spacing: 5) {
+                Text("#\(tag)")
+                    .font(PokkeType.labelMedium)
+                    .foregroundStyle(Palette.neutral800)
+                LucideIconView(icon: Lucide.x, size: 12, color: Palette.neutral600)
             }
+            .padding(.leading, 12)
+            .padding(.trailing, 9)
+            .frame(height: 32)
+            .background(Capsule().fill(Palette.neutral200))
+            .contentShape(Capsule())
         }
-        if !current.indices.isEmpty { rows.append(current) }
-        return rows
+        .buttonStyle(.plain)
+        .accessibilityLabel(L.s("action_delete") + " #\(tag)")
+    }
+}
+
+/// アイコン付きのテキストリンク
+private struct TextLink: View {
+    let text: String
+    let icon: Lucide.Icon
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                LucideIconView(icon: icon, size: 15, color: Palette.accent700)
+                Text(text)
+                    .font(PokkeType.labelMedium)
+                    .foregroundStyle(Palette.accent700)
+            }
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

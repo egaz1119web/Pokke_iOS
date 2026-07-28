@@ -21,7 +21,8 @@ struct PokkeApp: App {
                     // 同意（EEA/英国で必須）が取れてから広告SDKを初期化する。
                     // 画面が乗ってからでないとフォームを出せないので init ではなくここで呼ぶ
                     AdsConsent.shared.gather()
-                    StashRepository.shared.backfillMetadata()
+                    // 共有拡張が保存した分や、保存時に取れなかったサムネイル・本文を埋め直す
+                    StashRepository.shared.retryMissingMetadata()
                 }
                 // Googleログインのコールバック（REVERSED_CLIENT_ID のカスタムURLスキーム）
                 .onOpenURL { url in

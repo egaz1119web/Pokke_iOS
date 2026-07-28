@@ -1,5 +1,6 @@
 {
   "sourceLanguage": "en",
+  "version": "1.0",
   "strings": {
     "share_saved": {
       "extractionState": "manual",
@@ -14,6 +15,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokkeに保存しました"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokke에 저장했습니다"
           }
         }
       }
@@ -32,9 +39,14 @@
             "state": "translated",
             "value": "URLが見つかりませんでした"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL을 찾지 못했습니다"
+          }
         }
       }
     }
-  },
-  "version": "1.0"
+  }
 }
