@@ -11,9 +11,10 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 | ディレクトリ | 中身 | 所属ターゲット |
 | --- | --- | --- |
 | `PokkeCore/` | モデル・JSON・マージ・OGP取得・リポジトリ（純粋なロジック） | Pokke / PokkeShare / PokkeTests |
-| `Pokke/` | SwiftUIの画面、Firebase、AdMob、アプリのエントリポイント | Pokke |
+| `Pokke/` | SwiftUIの画面、デザインシステム、Firebase、AdMob、アプリのエントリポイント | Pokke |
+| `Pokke/Fonts/` | 同梱フォント（Info.plist の `UIAppFonts` に対応） | Pokke |
 | `PokkeShare/` | 共有シート拡張（Androidの `ShareReceiverActivity` 相当） | PokkeShare |
-| `PokkeTests/` | ユニットテスト（Androidの `app/src/test` から移植、34件） | PokkeTests |
+| `PokkeTests/` | ユニットテスト（Androidの `app/src/test` から移植、77件） | PokkeTests |
 
 - Bundle ID: `com.egaz.stash`（Androidの applicationId と同じ）／拡張は `com.egaz.stash.Share`
 - App Group: `group.com.egaz.stash` — 共有拡張とアプリ本体が `stash.json` を共有するのに必要
@@ -28,7 +29,13 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 | `GoogleAuth`（GoogleSignInClient + Firebase Auth） | `GoogleAuth`（GoogleSignIn-iOS + Firebase Auth） |
 | `FirestoreSync` | `FirestoreSync`（**同じ `users/{uid}` ドキュメント・同じJSON**） |
 | `AdsConsent`（UMP） | `AdsConsent`（UMP） |
-| `res/values/strings.xml` + `values-ja` | `Localizable.xcstrings`（キー名はAndroidと同一） |
+| `data/AppPrefs.kt`（SharedPreferences） | `AppPrefs`（UserDefaults） |
+| `data/CollectionIcons.kt` | `CollectionIcons` |
+| `ui/theme/Theme.kt` `Fonts.kt` | `UI/Theme.swift` `Fonts.swift` |
+| `ui/icon/LucideIcons.kt`（ImageVector） | `UI/LucideIcons.swift` ＋ `PokkeCore/SVGPath.swift` |
+| `ui/Components.kt` | `UI/Components.swift` |
+| `data/ImageSaver.kt`（MediaStore） | `Data/ImageSaver.swift`（Photos） |
+| `res/values/strings.xml` + `values-ja` + `values-ko` | `Localizable.xcstrings`（キー名はAndroidと同一） |
 | `ShareReceiverActivity` | `PokkeShare`（Share Extension） |
 
 **JSONスキーマはAndroidと完全に同一**（キー名・エポックミリ秒）。同じGoogleアカウントで
@@ -37,11 +44,25 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 
 ### iOSで変えたところ
 
-- **タブアイコン**: Androidは絵文字だが、iOSのタブバーはSF Symbolsが標準の見え方なのでそちらに合わせた
 - **共有拡張はOGPを取らない**: iOSの拡張は別プロセスで短命なため、拡張はURLの保存だけ行い、
-  アプリ本体がフォアグラウンド復帰時に `reloadFromDisk()` → `backfillMetadata()` で
+  アプリ本体がフォアグラウンド復帰時に `reloadFromDisk()` → `retryMissingMetadata()` で
   タイトル・サムネを埋める（`RootView` の `scenePhase` 監視）
+- **アプリ内ブラウザはSFSafariViewController**: AndroidのCustom Tabs相当。
+  Safariのログイン状態を引き継ぐので、X・Instagramの投稿もそのまま見られる
+- **画像の保存先は写真ライブラリのアルバム「Pokke」**: iOSに `Pictures/Pokke` に当たる
+  アプリ専用フォルダが無いため。権限は追加のみ（`NSPhotoLibraryAddUsageDescription`）
+- **ネイティブ広告に MediaView を入れている**: iOSのAdMob SDKに入っている広告バリデータが
+  「メイン画像/動画にMediaViewを使っていない」を実装エラーとして出すため。
+  Androidのレイアウトには無い要素なので、そこだけ縦に1枚多い
 - **配色はライト固定**: Android版が `lightColorScheme` 固定なので、`preferredColorScheme(.light)` で揃えた
+
+### アイコンとフォント
+
+Androidと同じ [Lucide](https://lucide.dev) の線画・同じ書体を使っている。
+アイコンはライブラリを足さず、Android版と**同じパスデータの文字列**を写して
+`SVGPath` で `Path` に起こしている（片方を直したらもう片方も直すこと）。
+書体は英数がFigtree・和文がZen Maru Gothicで、`kCTFontCascadeListAttribute` で
+1つのスタックに繋いでいる。ライセンス表記は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ---
 
@@ -81,17 +102,16 @@ Android で保存したリンクがそのまま出てくる。
 同意フォームの出方を検証したい時は `Pokke/Data/AdsConsent.swift` の
 `forceEeaInDebug` を `true` にすると、DEBUGビルドでEEA地域が強制されてフォームが出る。
 
-## 未対応（コンソール側の作業が要るもの）
+## App Store 提出
 
-### 1. App Store 提出前
+手順と残りの作業は [RELEASE.md](RELEASE.md) にまとめてある。コード側で済んでいるもの:
 
-- [ ] アプリアイコン — Androidのアダプティブアイコン（432px）を合成・拡大したもので暫定。
-      1024pxで書き出し直すのが望ましい（`Pokke/Assets.xcassets/AppIcon.appiconset/`）
-- [ ] `Info.plist` に `SKAdNetworkItems`（AdMobが配布しているリストを貼る）
-- [ ] プライバシーマニフェスト `PrivacyInfo.xcprivacy` — 広告IDとユーザーデータを扱うので必須
-- [ ] App Privacy（データ収集の申告）— Play の データセーフティ と同じ内容
-- [ ] 共有拡張の表示名 `Save to Pokke` を日本語化したい場合は
-      `PokkeShare/` に `InfoPlist.xcstrings` を追加する
+- [x] アプリアイコン — Androidの `ic_launcher_foreground.xml`（Caprasimoの「P」を
+      アウトライン化したもの）から1024pxで書き出し済み。Android版の変更に追従する場合は
+      同じベクターを `SVGPath` で描き直す
+- [x] `Info.plist` の `SKAdNetworkItems`（Google公式50件）
+- [x] プライバシーマニフェスト `PrivacyInfo.xcprivacy`
+- [x] 共有拡張の表示名を日英韓で出し分け（`PokkeShare/InfoPlist.xcstrings`）
 
 ---
 

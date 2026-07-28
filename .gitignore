@@ -1,0 +1,13 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Pokke/GoogleService-Info.plist は意図的に除外していない。
+# Android側も app/google-services.json をコミットしており、APIキーはBundle IDで
+# 制限された、クライアント配布物に元から埋め込まれる値なので秘匿情報ではない。
+
+.DS_Store

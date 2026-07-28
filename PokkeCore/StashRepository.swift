@@ -1,0 +1,198 @@
+import Combine
+import Foundation
+
+/// アプリ全データの保管庫。App Groupコンテナの stash.json にJSONで永続化する。
+/// デモ規模なので全件メモリ保持＋都度書き出しのシンプル構成。
+@MainActor
+final class StashRepository: ObservableObject {
+
+    static let shared = StashRepository()
+
+    @Published private(set) var state = StashState()
+
+    private var loaded = false
+
+    private init() {}
+
+    func initialize() {
+        guard !loaded else { return }
+        loaded = true
+        if let stored = StashStore.read() { state = stored }
+        refreshPickDateIfNeeded()
+    }
+
+    private func today() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
+    /// 日付が変わっていたらスキップ履歴をリセット
+    func refreshPickDateIfNeeded() {
+        let today = today()
+        if state.pickDate != today {
+            mutate { $0.pickDate = today; $0.pickSkippedIds = [] }
+        }
+    }
+
+    /// 今日のTodayPick。未読ゼロならnil
+    func currentPick() -> StashItem? {
+        TodayPick.choose(items: state.items, skippedIds: state.pickSkippedIds)
+    }
+
+    func skipPick(itemId: String) {
+        mutate { $0.pickSkippedIds.append(itemId) }
+    }
+
+    /// URLを保存。タイトル等はまず仮置きし、バックグラウンドでOGPを取得して差し替える
+    @discardableResult
+    func addLink(_ url: String) -> StashItem? {
+        guard let normalized = Self.normalizeUrl(url) else { return nil }
+        // 同一URLは重複保存しない
+        if let existing = state.items.first(where: { $0.url == normalized }) { return existing }
+
+        let item = StashItem(
+            id: UUID().uuidString,
+            url: normalized,
+            title: Self.displayFallbackTitle(normalized),
+            savedAt: nowMillis()
+        )
+        mutate {
+            $0.items.insert(item, at: 0)
+            $0.events.append(UsageEvent(type: UsageEvent.save, time: item.savedAt))
+        }
+        Task { await fetchMetadata(for: item.id, url: normalized) }
+        return item
+    }
+
+    /// 共有拡張が保存した直後のアイテムなど、まだOGPを取れていない分を後追いで埋める
+    func backfillMetadata() {
+        let pending = state.items.filter {
+            $0.imageUrl == nil && $0.siteName == nil && $0.title == Self.displayFallbackTitle($0.url)
+        }
+        for item in pending {
+            Task { await fetchMetadata(for: item.id, url: item.url) }
+        }
+    }
+
+    private func fetchMetadata(for id: String, url: String) async {
+        guard let meta = await MetadataFetcher.fetch(url) else { return }
+        guard let index = state.items.firstIndex(where: { $0.id == id }) else { return }
+        mutate { s in
+            s.items[index].title = meta.title ?? s.items[index].title
+            s.items[index].siteName = meta.siteName ?? s.items[index].siteName
+            s.items[index].imageUrl = meta.imageUrl ?? s.items[index].imageUrl
+            // 取得したサムネ・タイトルも他端末へ配りたいので更新時刻を進める
+            s.items[index].updatedAt = nowMillis()
+        }
+    }
+
+    /// リモート（Firestore）の状態をローカルへ取り込む。
+    /// 上書きではなくマージなので、この端末にしか無いデータが消えることはない。
+    /// 取り込みで内容が変わらなかった場合は何もしない（同期ループ防止）。
+    @discardableResult
+    func mergeRemote(_ remote: StashState) -> StashState {
+        let merged = StashMerge.merge(local: state, remote: remote, now: nowMillis())
+        if merged != state { mutate { $0 = merged } }
+        return merged
+    }
+
+    /// 共有拡張が別プロセスで書き足した分を取り込む。フォアグラウンド復帰時に呼ぶ。
+    /// 上書きではなく同じマージ規則を通すので、どちらの変更も失われない。
+    func reloadFromDisk() {
+        guard let onDisk = StashStore.read(), onDisk != state else { return }
+        mergeRemote(onDisk)
+        backfillMetadata()
+    }
+
+    func updateItem(_ updated: StashItem) {
+        mutate { s in
+            guard let index = s.items.firstIndex(where: { $0.id == updated.id }) else { return }
+            s.items[index] = updated
+            s.items[index].updatedAt = nowMillis()
+        }
+    }
+
+    func deleteItem(id: String) {
+        let now = nowMillis()
+        mutate { s in
+            s.items.removeAll { $0.id == id }
+            s.deletedIds[id] = now
+        }
+    }
+
+    func setArchived(id: String, archived: Bool) {
+        mutate { s in
+            guard let index = s.items.firstIndex(where: { $0.id == id }) else { return }
+            s.items[index].archived = archived
+            s.items[index].updatedAt = nowMillis()
+        }
+    }
+
+    /// ブラウザで開いた＝再訪としてカウント
+    func markOpened(id: String) {
+        let now = nowMillis()
+        mutate { s in
+            guard let index = s.items.firstIndex(where: { $0.id == id }) else { return }
+            s.items[index].openCount += 1
+            s.items[index].lastOpenedAt = now
+            s.items[index].updatedAt = now
+            s.events.append(UsageEvent(type: UsageEvent.open, time: now))
+        }
+    }
+
+    @discardableResult
+    func addCollection(name: String, emoji: String, colorIndex: Int) -> StashCollection {
+        let collection = StashCollection(
+            id: UUID().uuidString,
+            name: name,
+            emoji: emoji,
+            colorIndex: colorIndex,
+            updatedAt: nowMillis()
+        )
+        mutate { $0.collections.append(collection) }
+        return collection
+    }
+
+    func deleteCollection(id: String) {
+        let now = nowMillis()
+        mutate { s in
+            s.collections.removeAll { $0.id == id }
+            for index in s.items.indices where s.items[index].collectionId == id {
+                s.items[index].collectionId = nil
+                s.items[index].updatedAt = now
+            }
+            s.deletedIds[id] = now
+        }
+    }
+
+    /// http(s)のURLだけ受け付け、httpはhttpsへ格上げする
+    static func normalizeUrl(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let regex = try? NSRegularExpression(pattern: "https?://\\S+") else { return nil }
+        let ns = trimmed as NSString
+        guard let match = regex.firstMatch(in: trimmed, range: NSRange(location: 0, length: ns.length))
+        else { return nil }
+
+        var url = ns.substring(with: match.range)
+        if url.hasPrefix("http://") { url = "https://" + url.dropFirst("http://".count) }
+        while let last = url.last, ".,)」。".contains(last) { url.removeLast() }
+        return url.isEmpty ? nil : url
+    }
+
+    /// OGP取得前の仮タイトル（スキーム部分を落としただけのURL）
+    static func displayFallbackTitle(_ url: String) -> String {
+        if url.hasPrefix("https://") { return String(url.dropFirst("https://".count)) }
+        if url.hasPrefix("http://") { return String(url.dropFirst("http://".count)) }
+        return url
+    }
+
+    private func mutate(_ transform: (inout StashState) -> Void) {
+        var next = state
+        transform(&next)
+        guard next != state else { return }
+        state = next
+        StashStore.write(next)
+    }
+}
