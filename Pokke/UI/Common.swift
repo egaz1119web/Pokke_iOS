@@ -1,4 +1,3 @@
-import SafariServices
 import SwiftUI
 
 /// 「3日前」「3 days ago」のような相対時刻表示
@@ -18,25 +17,13 @@ func relativeTime(_ millis: EpochMillis) -> String {
 
 /// リンクを開く＋再訪カウント。
 ///
-/// 既定では `SFSafariViewController` でアプリ内に表示する。Safariのログイン状態を
-/// 引き継ぐので、X・Instagramのようにログインが要るサービスでも本文・画像・動画が
-/// そのまま見られる（AndroidのCustom Tabsと同じ狙い）。
+/// 常に端末の既定のブラウザ（またはそのURLを持つアプリ）へ渡す。
+/// アプリ内の `SFSafariViewController` で開く方式も試したが、Xのように
+/// アプリ側へ誘導するサービスで正しく表示できなかったため取りやめた。
 @MainActor
 func openLink(_ item: StashItem) {
     StashRepository.shared.markOpened(id: item.id)
     guard let url = URL(string: item.url) else { return }
-
-    if AppPrefs.shared.openInApp,
-       url.scheme == "https" || url.scheme == "http",
-       let presenter = topViewController() {
-        let configuration = SFSafariViewController.Configuration()
-        configuration.barCollapsingEnabled = true
-        let safari = SFSafariViewController(url: url, configuration: configuration)
-        safari.preferredControlTintColor = UIColor(Palette.accent)
-        safari.preferredBarTintColor = UIColor(Palette.bg)
-        presenter.present(safari, animated: true)
-        return
-    }
     UIApplication.shared.open(url)
 }
 

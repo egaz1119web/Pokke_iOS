@@ -5,7 +5,6 @@ struct SettingsScreen: View {
 
     @ObservedObject private var auth = GoogleAuth.shared
     @ObservedObject private var consent = AdsConsent.shared
-    @ObservedObject private var prefs = AppPrefs.shared
 
     @State private var loading = false
     @State private var message: String?
@@ -26,10 +25,10 @@ struct SettingsScreen: View {
                 // ログインしていなくても出す。隠してしまうと同期という機能自体に気付けない
                 SyncCard(signedIn: auth.profile != nil)
 
-                SectionLabel(text: L.s("settings_reading"))
+                SectionLabel(text: L.s("settings_guide"))
                     .padding(.top, 18)
                     .padding(.bottom, 8)
-                readingCard
+                guideCard
 
                 // 同意が必要な地域（EEA/英国）でのみ表示。あとから変更できる導線はUMPの要件
                 if consent.isPrivacyOptionsRequired {
@@ -120,31 +119,8 @@ struct SettingsScreen: View {
         }
     }
 
-    private var readingCard: some View {
+    private var guideCard: some View {
         PokkeCard(padding: 0) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(L.s("settings_open_in_app"))
-                        .font(PokkeType.bodyLarge)
-                        .foregroundStyle(Palette.ink)
-                    Text(L.s("settings_open_in_app_description"))
-                        .font(PokkeType.bodySmall)
-                        .foregroundStyle(Palette.neutral600)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-                PokkeSwitch(
-                    isOn: Binding(
-                        get: { prefs.openInApp },
-                        set: { prefs.setOpenInApp($0) }
-                    ),
-                    accessibilityLabel: L.s("settings_open_in_app")
-                )
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 13)
-
-            CardDivider()
             SettingsLinkRow(
                 icon: Lucide.bookOpen,
                 text: L.s("settings_how_to_save"),

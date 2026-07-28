@@ -20,7 +20,6 @@ final class AppPrefs: ObservableObject {
     private enum Key {
         static let onboarded = "onboarded"
         static let viewMode = "view_mode"
-        static let openInApp = "open_in_app"
         static let firstLaunchAt = "first_launch_at"
         static let reviewRequested = "review_requested"
     }
@@ -28,14 +27,12 @@ final class AppPrefs: ObservableObject {
     private let defaults = UserDefaults.standard
 
     @Published private(set) var viewMode: ViewMode = .list
-    @Published private(set) var openInApp = true
 
     /// このアプリを最初に開いた時刻。レビュー依頼を「使い始めてどれくらいか」で測るために持つ
     private(set) var firstLaunchAt: EpochMillis = 0
 
     private init() {
         viewMode = defaults.string(forKey: Key.viewMode).flatMap(ViewMode.init(rawValue:)) ?? .list
-        openInApp = defaults.object(forKey: Key.openInApp) as? Bool ?? true
 
         // 記録が無い＝今回が初回。以後この値は動かさない
         if let stored = defaults.object(forKey: Key.firstLaunchAt) as? Int64, stored > 0 {
@@ -63,10 +60,5 @@ final class AppPrefs: ObservableObject {
     func setViewMode(_ mode: ViewMode) {
         viewMode = mode
         defaults.set(mode.rawValue, forKey: Key.viewMode)
-    }
-
-    func setOpenInApp(_ enabled: Bool) {
-        openInApp = enabled
-        defaults.set(enabled, forKey: Key.openInApp)
     }
 }

@@ -2422,6 +2422,29 @@
         }
       }
     },
+    "settings_guide" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to use"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使い方"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사용법"
+          }
+        }
+      }
+    },
     "settings_how_to_save" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2441,75 +2464,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "저장하는 방법 보기"
-          }
-        }
-      }
-    },
-    "settings_open_in_app" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open links in Pokke"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "リンクをアプリ内で開く"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "링크를 앱 안에서 열기"
-          }
-        }
-      }
-    },
-    "settings_open_in_app_description" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opens links in an in-app browser. Because it shares your browser's sign-in state, posts on X and Instagram show up as they normally would."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリ内ブラウザで開きます。ブラウザのログイン状態を引き継ぐので、XやInstagramの投稿もそのまま表示されます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "앱 내 브라우저로 엽니다. 브라우저의 로그인 상태를 그대로 쓰기 때문에 X나 Instagram의 게시물도 평소처럼 보입니다."
-          }
-        }
-      }
-    },
-    "settings_reading" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reading"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "読む"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "읽기"
           }
         }
       }
