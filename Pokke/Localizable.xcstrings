@@ -1,15 +1,10 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "・" : {
-
-    },
-    "#%@" : {
-
-    },
-    "%lld" : {
-
-    },
+    "#%@" : {},
+    "%lld" : {},
+    "Pokke" : {},
+    "Pokke %@" : {},
     "action_add" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1162,6 +1157,167 @@
         }
       }
     },
+    "onboarding_back" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "戻る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "뒤로"
+          }
+        }
+      }
+    },
+    "onboarding_done_lead" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That's the whole flow. From now on, every link you share lands on your home list."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これで手順はおしまいです。これから共有したリンクは、すべてホームに並びます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이걸로 끝입니다. 앞으로 공유한 링크는 모두 홈에 쌓입니다."
+          }
+        }
+      }
+    },
+    "onboarding_done_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This link is on your home list too. Delete it any time if you don't need it."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このリンクはホームの一覧にも並んでいます。不要ならいつでも削除できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 링크는 홈 목록에도 있습니다. 필요 없으면 언제든 삭제할 수 있습니다."
+          }
+        }
+      }
+    },
+    "onboarding_done_saved_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just saved"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いま保存されたリンク"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "방금 저장된 링크"
+          }
+        }
+      }
+    },
+    "onboarding_done_settings_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can paste a URL with the + button too. This guide is always available from Settings."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ボタンからURLを貼り付けて保存することもできます。この案内は設定からいつでも見返せます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ 버튼으로 URL을 붙여 넣어 저장할 수도 있습니다. 이 안내는 설정에서 언제든 다시 볼 수 있습니다."
+          }
+        }
+      }
+    },
+    "onboarding_done_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存できました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장했습니다"
+          }
+        }
+      }
+    },
+    "onboarding_finish" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start using Pokke"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokkeをはじめる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke 시작하기"
+          }
+        }
+      }
+    },
     "onboarding_footnote" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1208,6 +1364,98 @@
         }
       }
     },
+    "onboarding_intro_lead" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke keeps the links you meant to read later, so they stop piling up in open tabs."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokkeは「あとで読もう」と思ったリンクをためておくアプリです。開いたままのタブに埋もれさせません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke는 \"나중에 읽어야지\" 하고 미뤄 둔 링크를 모아 두는 앱입니다. 열어 둔 탭 속에 묻히지 않게 해 줍니다."
+          }
+        }
+      }
+    },
+    "onboarding_intro_point_preview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titles and thumbnails are added for you"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルとサムネイルは自動で付く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제목과 썸네일은 자동으로 붙습니다"
+          }
+        }
+      }
+    },
+    "onboarding_intro_point_share" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One tap from any app's share button"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "他のアプリの共有ボタンから1タップ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 앱의 공유 버튼에서 한 번만 탭"
+          }
+        }
+      }
+    },
+    "onboarding_intro_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save now, read later"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "気になったものを、あとで読む"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지금 저장하고, 나중에 읽기"
+          }
+        }
+      }
+    },
     "onboarding_lead" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1231,6 +1479,282 @@
         }
       }
     },
+    "onboarding_mock_more" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "その他"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기타"
+          }
+        }
+      }
+    },
+    "onboarding_mock_pokke" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Pokke"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokkeに保存"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke에 저장"
+          }
+        }
+      }
+    },
+    "onboarding_open_share" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the share sheet"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有メニューを開く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "공유 메뉴 열기"
+          }
+        }
+      }
+    },
+    "onboarding_practice_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you can't find Pokke, tap “More” at the end of the row of apps. “Save to Pokke” is in the list that opens."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokkeが見当たらないときは、アプリの列の右端にある「その他」を押してください。開いた一覧の中に「Pokkeに保存」があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokke가 보이지 않으면 앱 줄 오른쪽 끝의 “기타”를 눌러 주세요. 열린 목록 안에 “Pokke에 저장”이 있습니다."
+          }
+        }
+      }
+    },
+    "onboarding_practice_lead" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The button below opens the share sheet. Pick “Save to Pokke” from the apps listed there."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下のボタンを押すと共有シートが開きます。並んでいるアプリの中から「Pokkeに保存」を選んでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아래 버튼을 누르면 공유 시트가 열립니다. 늘어선 앱 중에서 “Pokke에 저장”을 골라 주세요."
+          }
+        }
+      }
+    },
+    "onboarding_practice_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This shares Pokke's own page for practice. You can delete the saved link afterwards."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "練習用にPokkeの紹介ページを共有します。保存されたリンクはあとで削除できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "연습용으로 Pokke 소개 페이지를 공유합니다. 저장된 링크는 나중에 삭제할 수 있습니다."
+          }
+        }
+      }
+    },
+    "onboarding_practice_other_apps" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can also try it from another app, like a browser or a social app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブラウザやSNSなど、他のアプリの共有から試してもかまいません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브라우저나 SNS 등 다른 앱의 공유에서 시도해도 됩니다."
+          }
+        }
+      }
+    },
+    "onboarding_practice_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let's try it once"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いちど試してみましょう"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한 번 해 볼까요"
+          }
+        }
+      }
+    },
+    "onboarding_share_step1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The share sheet slides up. Scroll the row of apps to the end and tap “More”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有シートが下から出てきます。アプリの列を右端までたどり、「その他」を押します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "공유 시트가 아래에서 올라옵니다. 앱이 늘어선 줄을 오른쪽 끝까지 넘겨 “기타”를 누릅니다."
+          }
+        }
+      }
+    },
+    "onboarding_share_step1_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If “Save to Pokke” is already in the row, just tap it."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すでに「Pokkeに保存」が並んでいるときは、そのまま押してかまいません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이미 “Pokke에 저장”이 보이면 그대로 눌러도 됩니다."
+          }
+        }
+      }
+    },
+    "onboarding_share_step2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The full list of apps opens. Pick “Save to Pokke” from it."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてのアプリの一覧が開くので、その中から「Pokkeに保存」を選びます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모든 앱 목록이 열리면 그 안에서 “Pokke에 저장”을 고릅니다."
+          }
+        }
+      }
+    },
+    "onboarding_share_tip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The first time, Pokke usually isn't in the front row yet — it's inside the list behind “More”. Save once this way and it starts showing up in the front row."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "初めて使うときは、Pokkeが最初の画面に並んでいないことがほとんどです。「その他」を開いた一覧の中にいます。この手順でいちど保存すると、次からは最初の画面にも出てくるようになります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "처음에는 Pokke가 앞줄에 없는 경우가 대부분입니다. “기타”를 열면 나오는 목록 안에 있습니다. 이 방법으로 한 번 저장하면 다음부터는 앞줄에도 나타납니다."
+          }
+        }
+      }
+    },
     "onboarding_show_guide" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1250,6 +1774,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "저장하는 방법 보기"
+          }
+        }
+      }
+    },
+    "onboarding_skip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スキップ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스킵"
+          }
+        }
+      }
+    },
+    "onboarding_start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get started"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "はじめる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시작하기"
           }
         }
       }
@@ -1346,11 +1916,97 @@
         }
       }
     },
-    "Pokke" : {
-
+    "onboarding_try_it" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try it for real"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "実際にやってみる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실제로 해 보기"
+          }
+        }
+      }
     },
-    "Pokke %@" : {
-
+    "onboarding_try_later" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try later"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あとで試す"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나중에 하기"
+          }
+        }
+      }
+    },
+    "onboarding_waiting_lead" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once you pick “Save to Pokke”, this screen moves on by itself."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「Pokkeに保存」を選ぶと、この画面はひとりでに次へ進みます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Pokke에 저장”을 고르면 이 화면은 저절로 다음으로 넘어갑니다."
+          }
+        }
+      }
+    },
+    "onboarding_waiting_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for your pick"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選ばれるのを待っています"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택을 기다리고 있습니다"
+          }
+        }
+      }
     },
     "save_link_lead" : {
       "extractionState" : "manual",
@@ -2803,7 +3459,8 @@
           }
         }
       }
-    }
+    },
+    "・" : {}
   },
   "version" : "1.0"
 }

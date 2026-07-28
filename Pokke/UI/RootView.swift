@@ -71,18 +71,18 @@ struct RootView: View {
             }
 
             ToastHost(controller: toast)
-
-            if showGuide {
-                OnboardingDialog {
-                    showGuide = false
-                    AppPrefs.shared.markOnboarded()
-                }
-            }
         }
-        .animation(.easeOut(duration: 0.2), value: showGuide)
         .environmentObject(toast)
         // Android版が lightColorScheme 固定なので、見た目を揃えるためライトに固定する
         .preferredColorScheme(.light)
+        // 案内は重ねるのではなく画面を占有させる。共有シートを実際に開いて練習する
+        // 手順があり、後ろの一覧が透けているとどこを見ればよいのか分からなくなる
+        .fullScreenCover(isPresented: $showGuide) {
+            OnboardingFlow {
+                showGuide = false
+                AppPrefs.shared.markOnboarded()
+            }
+        }
         .sheet(isPresented: $showAdd) {
             SaveLinkSheet { url in
                 let added = StashRepository.shared.addLink(url) != nil
