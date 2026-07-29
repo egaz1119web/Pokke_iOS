@@ -26,11 +26,12 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 | --- | --- |
 | `data/Models.kt` `StashJson.kt` `StashMerge.kt` `TodayPick.kt` `DomainGrouping.kt` `MetadataFetcher.kt` | `PokkeCore/` に同名で1対1移植 |
 | `StashRepository`（`filesDir/stash.json`） | `StashRepository` + `StashStore`（App Groupの `stash.json`） |
-| `GoogleAuth`（GoogleSignInClient + Firebase Auth） | `GoogleAuth`（GoogleSignIn-iOS + Firebase Auth） |
+| `GoogleAuth`（GoogleSignInClient + Firebase Auth） | `AuthService`（GoogleSignIn-iOS + AuthenticationServices + Firebase Auth。**iOSはSign in with Appleも追加**） |
 | `FirestoreSync` | `FirestoreSync`（**同じ `users/{uid}` ドキュメント・同じJSON**） |
 | `AdsConsent`（UMP） | `AdsConsent`（UMP） |
 | `data/AppPrefs.kt`（SharedPreferences） | `AppPrefs`（UserDefaults） |
 | `data/CollectionIcons.kt` | `CollectionIcons` |
+| `data/ThumbnailReport.kt` | `PokkeCore/ThumbnailReport.swift`（entry番号まで同じフォームを共有） |
 | `ui/theme/Theme.kt` `Fonts.kt` | `UI/Theme.swift` `Fonts.swift` |
 | `ui/icon/LucideIcons.kt`（ImageVector） | `UI/LucideIcons.swift` ＋ `PokkeCore/SVGPath.swift` |
 | `ui/Components.kt` | `UI/Components.swift` |
@@ -47,10 +48,13 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 - **共有拡張はOGPを取らない**: iOSの拡張は別プロセスで短命なため、拡張はURLの保存だけ行い、
   アプリ本体がフォアグラウンド復帰時に `reloadFromDisk()` → `retryMissingMetadata()` で
   タイトル・サムネを埋める（`RootView` の `scenePhase` 監視）
-- **アプリ内ブラウザはSFSafariViewController**: AndroidのCustom Tabs相当。
-  Safariのログイン状態を引き継ぐので、X・Instagramの投稿もそのまま見られる
+- **リンクは常に端末の既定ブラウザで開く**: `SFSafariViewController` も試したが、
+  Xのようにアプリ側へ誘導するサービスで正しく表示できなかったため取りやめた
+  ([`Common.swift`](Pokke/UI/Common.swift) の `openLink`)
 - **画像の保存先は写真ライブラリのアルバム「Pokke」**: iOSに `Pictures/Pokke` に当たる
   アプリ専用フォルダが無いため。権限は追加のみ（`NSPhotoLibraryAddUsageDescription`）
+- **ログインはGoogleに加えてSign in with Appleも用意**: App Store審査ガイドライン4.8対応
+  （詳細は上の「ログイン / クラウド同期」）
 - **ネイティブ広告に MediaView を入れている**: iOSのAdMob SDKに入っている広告バリデータが
   「メイン画像/動画にMediaViewを使っていない」を実装エラーとして出すため。
   Androidのレイアウトには無い要素なので、そこだけ縦に1枚多い
@@ -66,11 +70,17 @@ Androidと同じ [Lucide](https://lucide.dev) の線画・同じ書体を使っ�
 
 ---
 
-## Googleログイン / クラウド同期 ✅ 設定済み
+## ログイン / クラウド同期
 
 - `Pokke/GoogleService-Info.plist`（Bundle ID `com.egaz.stash` / プロジェクト `pokke-600ea` — Androidと同一）
 - `Pokke/Info.plist` の `CFBundleURLSchemes` に `REVERSED_CLIENT_ID` を登録済み
 - 設定画面のログインボタンが有効になり、Googleの認証フローが起動するところまで確認済み
+- **Sign in with Apple も用意している（iOS固有）**。App Store審査ガイドライン4.8は
+  「サードパーティログイン（Google）を使うなら同等の条件を満たすログインも用意する」ことを
+  求めており、それを満たす手段が実質Sign in with Appleしか無いため。Android版には無い
+  ([`Pokke/Data/AuthService.swift`](Pokke/Data/AuthService.swift) — 旧 `GoogleAuth.swift`
+  をリネームし、Google/Appleどちらのサインインでも同じ `profile`／Firestoreの同期キーに
+  行き着くようにしてある)
 
 **plist の置き場所は `Pokke/Pokke/GoogleService-Info.plist`**（アプリのソースフォルダの中）。
 プロジェクト直下に置くと同期グループの外なのでバンドルに入らず、`FirebaseApp.configure()` が
@@ -79,11 +89,19 @@ Androidと同じ [Lucide](https://lucide.dev) の線画・同じ書体を使っ�
 Firebase Console 側で残っている確認事項:
 
 - [ ] Authentication → Sign-in method で **Google が有効**か（Android と共用なので済んでいるはず）
+- [ ] Authentication → Sign-in method で **Apple を有効化する**（iOS固有・未対応）
 - [ ] Firestore ルールが [`firestore.rules`](../../AndroidStudioProjects/Stash/firestore.rules) の内容で公開されているか
+
+Apple Developer Portal 側で残っている確認事項（[RELEASE.md](RELEASE.md) 手順1）:
+
+- [ ] App ID (`com.egaz.stash`) で **Sign In with Apple** Capability を有効化
+- [ ] Releaseビルドは有効化前だと
+      `doesn't include the Sign In with Apple capability` で失敗する（確認済み）
 
 SHA-1 の登録は Android 固有なので iOS 側では不要。
 同期先は Android と同じ `users/{uid}` ドキュメントなので、同じアカウントでログインすれば
-Android で保存したリンクがそのまま出てくる。
+Android で保存したリンクがそのまま出てくる（Apple でサインインした場合はAndroid側に
+対応アカウントが無いので同期は新規アカウント扱いになる）。
 
 ## AdMob ✅ iOS用アプリ設定済み
 

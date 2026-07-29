@@ -1,9 +1,10 @@
+import AuthenticationServices
 import SwiftUI
 
 struct SettingsScreen: View {
     let onShowGuide: () -> Void
 
-    @ObservedObject private var auth = GoogleAuth.shared
+    @ObservedObject private var auth = AuthService.shared
     @ObservedObject private var consent = AdsConsent.shared
 
     @State private var loading = false
@@ -90,7 +91,7 @@ struct SettingsScreen: View {
                         .clipShape(Circle())
                     }
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(profile.displayName ?? L.s("settings_google_account"))
+                        Text(profile.displayName ?? fallbackAccountName(for: profile.provider))
                             .font(PokkeType.bodyLarge)
                             .foregroundStyle(Palette.ink)
                         Text(profile.email)
@@ -112,9 +113,15 @@ struct SettingsScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
                 // ブランドガイドラインどおり、白地に4色ロゴ＋濃色の文字
                 GoogleSignInButton(enabled: !loading && auth.isConfigured, loading: loading) {
-                    Task { await signIn() }
+                    Task { await signInWithGoogle() }
                 }
                 .padding(.top, 12)
+                // Googleだけだと審査ガイドライン4.8（サードパーティログインを使うなら
+                // 同等のログインも用意する）に抵触するため、Sign in with Appleも並べる
+                AppleSignInButton(enabled: !loading && auth.isConfigured) { result in
+                    Task { await signInWithApple(result) }
+                }
+                .padding(.top, 10)
             }
         }
     }
@@ -129,19 +136,39 @@ struct SettingsScreen: View {
         }
     }
 
-    private func signIn() async {
-        guard let rootViewController = GoogleAuth.rootViewController() else { return }
+    private func fallbackAccountName(for provider: AuthProviderKind?) -> String {
+        L.s(provider == .apple ? "settings_apple_account" : "settings_google_account")
+    }
+
+    private func signInWithGoogle() async {
+        guard let rootViewController = AuthService.rootViewController() else { return }
         loading = true
         message = nil
-        switch await auth.signIn(presenting: rootViewController) {
-        case .success:
+        apply(await auth.signInWithGoogle(presenting: rootViewController))
+        loading = false
+    }
+
+    private func signInWithApple(_ result: Result<ASAuthorization, Error>) async {
+        switch result {
+        case let .success(authorization):
+            loading = true
             message = nil
-        case .cancelled:
-            break
+            apply(await auth.signInWithApple(authorization: authorization))
+            loading = false
+        case let .failure(error):
+            // ユーザーが自分でシートを閉じた場合はGoogleのキャンセル同様、エラー表示はしない
+            if let authError = error as? ASAuthorizationError, authError.code == .canceled { return }
+            message = L.s("sign_in_error_generic", error.localizedDescription)
+        }
+    }
+
+    private func apply(_ result: SignInResult) {
+        switch result {
+        case .success, .cancelled:
+            message = nil
         case let .failure(messageKey, detail):
             message = L.s(messageKey, detail ?? L.s("error_unknown"))
         }
-        loading = false
     }
 }
 
@@ -171,6 +198,27 @@ private struct GoogleSignInButton: View {
         }
         .buttonStyle(.pressScale(0.98))
         .disabled(!enabled)
+    }
+}
+
+/// Sign in with Apple ボタン。見た目はHIG準拠の公式スタイルをそのまま使い、
+/// 角丸だけ他のピルボタンに合わせている（HIGは角丸の変更を認めている）
+private struct AppleSignInButton: View {
+    let enabled: Bool
+    let onCompletion: (Result<ASAuthorization, Error>) -> Void
+
+    var body: some View {
+        SignInWithAppleButton(.signIn) { request in
+            request.requestedScopes = [.fullName, .email]
+            request.nonce = AuthService.shared.appleSignInRequest()
+        } onCompletion: { result in
+            onCompletion(result)
+        }
+        .signInWithAppleButtonStyle(.black)
+        .frame(height: 48)
+        .clipShape(Capsule())
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.6)
     }
 }
 

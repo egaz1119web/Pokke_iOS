@@ -2008,6 +2008,213 @@
         }
       }
     },
+    "report_thumbnail_action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report a display problem"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表示がおかしいことを知らせる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "표시 문제 알리기"
+          }
+        }
+      }
+    },
+    "report_thumbnail_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If a thumbnail or title is missing, or shows the wrong thing, let us know. Some sites only reveal preview info to their own crawlers, so we have to add support site by site — %1$@ in this case."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サムネイルやタイトルが出ない、内容が違うといったことがあれば知らせてください。サイトによってはプレビュー用の情報を自社のクローラにしか返さないため、こちらでサイトごとに対応する必要があります（今回は %1$@）。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "미리보기나 제목이 안 나오거나 내용이 다르면 알려주세요. 일부 사이트는 미리보기 정보를 자사 크롤러에만 제공해서, 사이트별로 따로 대응해야 합니다(이번에는 %1$@)."
+          }
+        }
+      }
+    },
+    "report_thumbnail_form_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This opens a Google Form with the above filled in. Nothing is sent until you tap Submit there, and you can edit or clear any field first."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上の内容を入れたGoogleフォームが開きます。フォームで「送信」を押すまで何も送られません。項目の編集も削除もできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "위 내용이 입력된 Google 설문지가 열립니다. 설문지에서 '제출'을 누르기 전까지는 아무것도 전송되지 않으며, 각 항목을 수정하거나 지울 수 있습니다."
+          }
+        }
+      }
+    },
+    "report_thumbnail_include_url" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also send the full link"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完全なリンクも送る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "전체 링크도 보내기"
+          }
+        }
+      }
+    },
+    "report_thumbnail_include_url_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional. Lets us open the exact page you saved."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任意です。保存したページそのものを開いて確認できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택 사항입니다. 저장한 페이지를 직접 열어 확인할 수 있습니다."
+          }
+        }
+      }
+    },
+    "report_thumbnail_open_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't open a browser"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブラウザを開けませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브라우저를 열지 못했습니다"
+          }
+        }
+      }
+    },
+    "report_thumbnail_open_form" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the form"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォームを開く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설문지 열기"
+          }
+        }
+      }
+    },
+    "report_thumbnail_payload_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What gets sent"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送られる内容"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보내지는 내용"
+          }
+        }
+      }
+    },
+    "report_thumbnail_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report a display problem"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このサイトの表示について知らせる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 사이트의 표시 문제 알리기"
+          }
+        }
+      }
+    },
     "save_link_lead" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2353,6 +2560,29 @@
         }
       }
     },
+    "settings_apple_account" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Account"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appleアカウント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 계정"
+          }
+        }
+      }
+    },
     "settings_cloud_sync" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2497,19 +2727,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in with Google to sync your saved links across devices"
+            "value" : "Sign in to sync your saved links across devices"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Googleでログインすると、保存したリンクが端末間で同期されます"
+            "value" : "ログインすると、保存したリンクが端末間で同期されます"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Google로 로그인하면 저장한 링크가 기기 간에 동기화됩니다"
+            "value" : "로그인하면 저장한 링크가 기기 간에 동기화됩니다"
           }
         }
       }

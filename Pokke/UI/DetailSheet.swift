@@ -11,6 +11,7 @@ struct DetailSheet: View {
     @State private var tagInput = ""
     @State private var showDeleteConfirm = false
     @State private var showImageViewer = false
+    @State private var showReport = false
     @State private var savingImage = false
     @FocusState private var tagFieldFocused: Bool
 
@@ -36,6 +37,15 @@ struct DetailSheet: View {
                         StashRepository.shared.refetchMetadata(itemId: item.id)
                     }
                     .padding(.top, 12)
+
+                    // 再取得しても直らないサイトがある（SNSはog:タグを自社の
+                    // クローラにしか返さない等）。その受け皿を再取得の真下に置く。
+                    // ただし試す前の第一候補は再取得なので、色を落として一段下げる
+                    if ThumbnailReport.Form.isConfigured {
+                        SubtleTextLink(text: L.s("report_thumbnail_action"), icon: Lucide.messageSquare) {
+                            showReport = true
+                        }
+                    }
                 }
 
                 // SNSの投稿ではog:descriptionに本文が入る。記事ならリード文。
@@ -84,6 +94,10 @@ struct DetailSheet: View {
                 )
                 .presentationBackground(.clear)
             }
+        }
+        .sheet(isPresented: $showReport) {
+            ThumbnailReportSheet(item: item)
+                .environmentObject(toast)
         }
     }
 
@@ -332,6 +346,30 @@ private struct TextLink: View {
                     .foregroundStyle(Palette.accent700)
             }
             .padding(.vertical, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// [TextLink] の控えめな版。
+/// アクセント色を使わず字も一段小さくして、隣に並ぶ本命の操作より後ろに置く。
+private struct SubtleTextLink: View {
+    let text: String
+    let icon: Lucide.Icon
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                LucideIconView(icon: icon, size: 15, color: Palette.neutral500)
+                Text(text)
+                    .font(PokkeType.bodySmall)
+                    .foregroundStyle(Palette.neutral600)
+            }
+            // 字は小さいままでも指で押せるよう、上下の余白で触れる範囲を稼ぐ。
+            // 左右は空けない。空けると真上のTextLinkとアイコンの頭が揃わなくなる
+            .padding(.vertical, 9)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

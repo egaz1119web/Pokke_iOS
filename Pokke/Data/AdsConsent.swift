@@ -54,7 +54,7 @@ final class AdsConsent: ObservableObject {
                     self?.refresh()
                     return
                 }
-                guard let rootViewController = GoogleAuth.rootViewController() else {
+                guard let rootViewController = AuthService.rootViewController() else {
                     self?.refresh()
                     return
                 }
@@ -73,7 +73,7 @@ final class AdsConsent: ObservableObject {
 
     /// 設定画面の「広告のプライバシー設定」から呼ぶ
     func showPrivacyOptionsForm() {
-        guard let rootViewController = GoogleAuth.rootViewController() else { return }
+        guard let rootViewController = AuthService.rootViewController() else { return }
         UMPConsentForm.presentPrivacyOptionsForm(from: rootViewController) { [weak self] error in
             if let error {
                 print("[AdsConsent] privacy options form error: \(error.localizedDescription)")

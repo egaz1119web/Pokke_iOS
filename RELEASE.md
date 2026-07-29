@@ -28,7 +28,7 @@ Android版 [RELEASE.md](../../AndroidStudioProjects/Stash/RELEASE.md) のiOS版�
 | --- | --- |
 | Description | `Pokke` |
 | Bundle ID | Explicit: `com.egaz.stash` |
-| Capabilities | **App Groups** にチェック |
+| Capabilities | **App Groups**・**Sign In with Apple** にチェック |
 
 続けて共有拡張用も登録:
 
@@ -36,7 +36,7 @@ Android版 [RELEASE.md](../../AndroidStudioProjects/Stash/RELEASE.md) のiOS版�
 | --- | --- |
 | Description | `Pokke Share Extension` |
 | Bundle ID | Explicit: `com.egaz.stash.Share` |
-| Capabilities | **App Groups** にチェック |
+| Capabilities | **App Groups** にチェック（Sign In with Appleは本体だけでよい） |
 
 **App Groups** タブ（左メニュー）→「+」で `group.com.egaz.stash` を作成し、
 上記2つのApp IDの両方に紐付ける。
@@ -45,6 +45,14 @@ Android版 [RELEASE.md](../../AndroidStudioProjects/Stash/RELEASE.md) のiOS版�
 > （このプロジェクトは既に有効）、実機ビルドやアーカイブ時にXcodeが自動で登録してくれることが多い。
 > ただし **App Groupsのような明示的なCapabilityは自動登録に失敗することがある**ので、
 > エラーが出たらこの手順で手動登録する。
+>
+> **Sign In with Apple も同様に明示登録が要る**。`Pokke/Pokke.entitlements` に
+> `com.apple.developer.applesignin` は追加済みだが、それだけでは足りず、
+> App ID側でこのCapabilityを有効にし、プロビジョニングプロファイルを作り直す
+> （Automatic signingなら再ビルドで再生成される）必要がある。
+> 有効にする前にReleaseビルドすると
+> `doesn't include the Sign In with Apple capability` というエラーで止まる
+> （2026-07-29 に実機ビルドで確認済み。App Store審査のGuideline 4.8対応として追加した）。
 
 ---
 

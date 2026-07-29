@@ -8,5 +8,12 @@
 	<array>
 		<string>group.com.egaz.stash</string>
 	</array>
+	<!-- App Store 審査ガイドライン4.8対応（Googleログインだけだと却下される）。
+	     Apple Developer PortalのApp IDでも Sign in with Apple のCapabilityを
+	     有効にしておくこと。RELEASE.md参照 -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 </dict>
 </plist>

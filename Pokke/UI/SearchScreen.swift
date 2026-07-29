@@ -71,7 +71,8 @@ struct SearchScreen: View {
                             item: item,
                             thumbnailSize: 56,
                             thumbnailCorner: 14,
-                            showExcerpt: false
+                            showExcerpt: false,
+                            showUnreadDot: false
                         ) { onItemTap(item) }
                     }
                 }

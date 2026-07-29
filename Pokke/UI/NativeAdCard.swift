@@ -26,7 +26,7 @@ final class NativeAdLoader: NSObject, ObservableObject, NativeAdLoaderDelegate {
         guard nativeAd == nil, adLoader == nil else { return }
         let loader = AdLoader(
             adUnitID: adUnitId,
-            rootViewController: GoogleAuth.rootViewController(),
+            rootViewController: AuthService.rootViewController(),
             adTypes: [.native],
             options: nil
         )

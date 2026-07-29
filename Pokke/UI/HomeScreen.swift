@@ -113,7 +113,7 @@ private struct ItemPage: View {
                         ForEach(rows) { row in
                             switch row {
                             case let .link(item):
-                                ItemRow(item: item) { onItemTap(item) }
+                                ItemRow(item: item, showUnreadDot: false) { onItemTap(item) }
                             case .ad:
                                 NativeAdCard()
                             }

@@ -11,7 +11,7 @@ struct PokkeApp: App {
             FirebaseApp.configure()
         }
         StashRepository.shared.initialize()
-        GoogleAuth.shared.restoreSession()
+        AuthService.shared.restoreSession()
     }
 
     var body: some Scene {
@@ -26,7 +26,7 @@ struct PokkeApp: App {
                 }
                 // Googleログインのコールバック（REVERSED_CLIENT_ID のカスタムURLスキーム）
                 .onOpenURL { url in
-                    GoogleAuth.shared.handle(url: url)
+                    AuthService.shared.handle(url: url)
                 }
         }
     }

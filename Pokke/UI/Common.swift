@@ -136,6 +136,8 @@ struct ItemRow: View {
     var thumbnailSize: CGFloat = 76
     var thumbnailCorner: CGFloat = 16
     var showExcerpt = true
+    // 検索結果は「絞り込みで見つける」画面であって未読管理の画面ではないため出さない
+    var showUnreadDot = true
     let onTap: () -> Void
 
     var body: some View {
@@ -155,7 +157,7 @@ struct ItemRow: View {
                             .foregroundStyle(Palette.neutral700)
                             .lineLimit(1)
                     }
-                    ItemMetaRow(item: item)
+                    ItemMetaRow(item: item, showUnreadDot: showUnreadDot)
                 }
                 Spacer(minLength: 0)
             }
@@ -166,6 +168,7 @@ struct ItemRow: View {
 /// ドメイン・保存時刻と、右端の未読ドット
 private struct ItemMetaRow: View {
     let item: StashItem
+    var showUnreadDot = true
 
     var body: some View {
         HStack(spacing: 6) {
@@ -183,7 +186,7 @@ private struct ItemMetaRow: View {
                 .lineLimit(1)
                 .fixedSize()
             Spacer(minLength: 0)
-            if item.unread { UnreadDot() }
+            if showUnreadDot && item.unread { UnreadDot() }
         }
     }
 }
