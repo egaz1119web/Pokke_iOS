@@ -281,6 +281,604 @@
         }
       }
     },
+    "ai_ask_all_links" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI about your links"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存したリンクについてAIに聞く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장한 링크에 대해 AI에게 묻기"
+          }
+        }
+      }
+    },
+    "ai_ask_this_collection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI about this collection"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このコレクションについてAIに聞く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 컬렉션에 대해 AI에게 묻기"
+          }
+        }
+      }
+    },
+    "ai_disclaimer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runs entirely on your device — nothing is sent anywhere. Answers can be wrong, so open the link to check."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "処理はすべてこの端末の中で行われ、リンクの内容が外に送られることはありません。答えが正しいとは限らないので、気になったらリンクを開いて確かめてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모든 처리는 이 기기 안에서 이루어지며, 링크 내용이 밖으로 전송되지 않습니다. 답이 정확하지 않을 수 있으니 링크를 열어 확인해 주세요."
+          }
+        }
+      }
+    },
+    "ai_error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't answer that. Try asking again, or word it differently."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "うまく答えられませんでした。もう一度聞くか、聞き方を変えてみてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "답하지 못했습니다. 다시 묻거나 다르게 물어봐 주세요."
+          }
+        }
+      }
+    },
+    "ai_error_apple_intelligence_off" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Apple Intelligence in Settings to use this."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定でApple Intelligenceを有効にすると使えるようになります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정에서 Apple Intelligence를 켜면 사용할 수 있습니다."
+          }
+        }
+      }
+    },
+    "ai_error_model_not_ready" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The on-device AI is still getting ready. Try again in a moment."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端末内AIの準備がまだ済んでいません。少ししてからもう一度お試しください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기기 내 AI가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요."
+          }
+        }
+      }
+    },
+    "ai_error_unsupported" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On-device AI isn't available on this device."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この端末では、端末内AIを使えません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기에서는 기기 내 AI를 쓸 수 없습니다."
+          }
+        }
+      }
+    },
+    "ai_instruction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You are the assistant of Pokke, an app for saving links to read later. Below is an overview of everything the user saved (totals, date range, most common sites and tags), followed by only some of the links in detail with the date each was saved. There are saved links not shown in detail, so never say the detailed list is everything. Answer the question using only what is given, in English, in three sentences or less. When you mention a link, use its title. If the list doesn't say, reply that you can't tell from the saved links — never make anything up."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたは、あとで読むリンクを保存するアプリ「Pokke」のアシスタントです。次に、保存済み全体の要約（件数・期間・よく使うサイトとタグ）と、そのうち一部のリンクだけを保存日つきで詳しく示します。詳しく載っていないリンクもあるので、詳細の一覧が全部だとは言わないでください。示されたものだけを根拠に、日本語で3文以内で簡潔に答えてください。リンクを挙げるときはタイトルで示します。一覧に書かれていないことを聞かれたら「保存されたリンクからは分かりません」と答え、推測で補わないでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "당신은 나중에 읽을 링크를 저장하는 앱 'Pokke'의 어시스턴트입니다. 아래에는 저장된 전체의 요약(개수·기간·자주 쓰는 사이트와 태그)과, 그중 일부 링크만 저장한 날짜와 함께 자세히 적혀 있습니다. 자세히 적히지 않은 링크도 있으므로 상세 목록이 전부라고 말하지 마세요. 주어진 것만을 근거로 한국어로 세 문장 이내로 간결하게 답하세요. 링크를 언급할 때는 제목으로 가리킵니다. 목록에 없는 내용은 '저장된 링크만으로는 알 수 없습니다'라고 답하고, 추측으로 채우지 마세요."
+          }
+        }
+      }
+    },
+    "ai_open_settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を開く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정 열기"
+          }
+        }
+      }
+    },
+    "ai_question_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask anything about them"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聞きたいことを入力"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "궁금한 것을 입력하세요"
+          }
+        }
+      }
+    },
+    "ai_referenced_all" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read all %1$lld of these links to answer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この%1$lld件を読んで答えました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 %1$lld개를 읽고 답했습니다"
+          }
+        }
+      }
+    },
+    "ai_referenced_some" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read %2$lld of your %1$lld links to answer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld件のうち、この%2$lld件を読んで答えました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld개 중 이 %2$lld개를 읽고 답했습니다"
+          }
+        }
+      }
+    },
+    "ai_scope_all_links" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answers based on your %1$lld saved links"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存済みのリンク%1$lld件をもとに答えます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장된 링크 %1$lld개를 바탕으로 답합니다"
+          }
+        }
+      }
+    },
+    "ai_scope_collection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answers based on “%1$@” (%2$lld links)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%1$@」のリンク%2$lld件をもとに答えます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%1$@'의 링크 %2$lld개를 바탕으로 답합니다"
+          }
+        }
+      }
+    },
+    "ai_send" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보내기"
+          }
+        }
+      }
+    },
+    "ai_sheet_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask about your links"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存したリンクに聞く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장한 링크에 묻기"
+          }
+        }
+      }
+    },
+    "ai_suggest_all_pick" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What should I read first?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初に読むならどれ？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "먼저 읽는다면 어떤 것?"
+          }
+        }
+      }
+    },
+    "ai_suggest_all_recent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sum up what I saved this week"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今週保存したものをまとめて"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이번 주에 저장한 것을 정리해 줘"
+          }
+        }
+      }
+    },
+    "ai_suggest_all_topics" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What kinds of things have I saved?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どんなものを保存してる？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어떤 것들을 저장했나요?"
+          }
+        }
+      }
+    },
+    "ai_suggest_collection_oldest" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's been sitting here the longest?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一番長く置きっぱなしのものは？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가장 오래 방치된 것은?"
+          }
+        }
+      }
+    },
+    "ai_suggest_collection_pick" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which one should I read first?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初に読むならどれ？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "먼저 읽는다면 어떤 것?"
+          }
+        }
+      }
+    },
+    "ai_suggest_collection_summary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sum up this collection"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このコレクションをまとめて"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 컬렉션을 정리해 줘"
+          }
+        }
+      }
+    },
+    "ai_suggest_tags_action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggest tags with AI"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AIにタグを提案してもらう"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI로 태그 제안받기"
+          }
+        }
+      }
+    },
+    "ai_suggest_tags_retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't suggest tags. Try again"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提案できませんでした。もう一度試す"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제안하지 못했습니다. 다시 시도"
+          }
+        }
+      }
+    },
+    "ai_tag_instruction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggest up to 4 short tags for this saved link, based only on its title, site, and note. If any of the existing tags shown below fit this link, reuse them exactly as written instead of inventing new wording. Only invent a new tag when none of them fit. Each tag should be 1-2 words, lowercase, with no hashtag symbol. Reply with only the tags — no explanation, no numbering, no commas. Don't repeat any tag already on this link."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存したこのリンクに合う短いタグを、タイトル・サイト・noteだけを根拠に、多くて4つ提案してください。下に示す既存のタグで合うものがあれば、新しい言い回しを作らずそのまま使ってください。どれも合わないときだけ新しいタグを考えてください。1〜2語の短い語にし、小文字・記号無しにしてください。説明や番号、カンマは付けず、タグだけを返してください。このリンクに既に付いているタグと同じものは出さないでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장한 이 링크에 어울리는 짧은 태그를, 제목·사이트·note만을 근거로 최대 4개 제안해 주세요. 아래에 있는 기존 태그 중 어울리는 것이 있으면 새로 표현을 만들지 말고 그대로 사용해 주세요. 어느 것도 맞지 않을 때만 새 태그를 생각해 주세요. 1~2단어의 짧은 태그로 만들고, 소문자로 쓰고 기호는 넣지 마세요. 설명이나 번호, 쉼표 없이 태그만 답해 주세요. 이 링크에 이미 있는 태그와 같은 것은 제안하지 마세요."
+          }
+        }
+      }
+    },
+    "ai_thinking" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking on this device…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この端末の中で考えています…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기 안에서 생각하는 중…"
+          }
+        }
+      }
+    },
     "collection_browse_links" : {
       "extractionState" : "manual",
       "localizations" : {

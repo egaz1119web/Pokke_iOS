@@ -144,6 +144,8 @@ private struct CollectionDetail: View {
     let onBrowseLinks: () -> Void
 
     @State private var showEdit = false
+    @State private var showAskAi = false
+    @State private var aiAvailability: AiAvailability = currentAiAvailability()
 
     private var items: [StashItem] {
         state.items
@@ -156,6 +158,10 @@ private struct CollectionDetail: View {
             ScrollView {
                 LazyVStack(spacing: 10) {
                     header
+                    // 中身が無いコレクションでは答える材料が無いので出さない
+                    if showsAiEntryPoint(aiAvailability), !items.isEmpty {
+                        AiAskBar(text: L.s("ai_ask_this_collection")) { showAskAi = true }
+                    }
                     if items.isEmpty {
                         CollectionEmptyState(collection: collection, onBrowseLinks: onBrowseLinks)
                     } else {
@@ -185,6 +191,18 @@ private struct CollectionDetail: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: showEdit)
+        .onAppear { aiAvailability = currentAiAvailability() }
+        .sheet(isPresented: $showAskAi) {
+            AskAiSheet(
+                scopeLabel: L.s("ai_scope_collection", collection.name, items.count),
+                items: items,
+                suggestions: [
+                    L.s("ai_suggest_collection_summary"),
+                    L.s("ai_suggest_collection_pick"),
+                    L.s("ai_suggest_collection_oldest"),
+                ]
+            )
+        }
     }
 
     private var header: some View {

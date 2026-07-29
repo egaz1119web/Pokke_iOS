@@ -7,6 +7,7 @@ struct DetailSheet: View {
 
     let item: StashItem
     let collections: [StashCollection]
+    let allItems: [StashItem]
 
     @State private var tagInput = ""
     @State private var showDeleteConfirm = false
@@ -14,6 +15,13 @@ struct DetailSheet: View {
     @State private var showReport = false
     @State private var savingImage = false
     @FocusState private var tagFieldFocused: Bool
+
+    // タグ提案は毎回聞きに行くと待たされるだけなので、開いている間だけエンジンを使い回す
+    @State private var aiAvailability: AiAvailability = currentAiAvailability()
+    @State private var aiSession: AnyObject?
+    @State private var suggestedTags: [String] = []
+    @State private var suggestingTags = false
+    @State private var suggestTagsFailed = false
 
     var body: some View {
         ScrollView {
@@ -98,6 +106,10 @@ struct DetailSheet: View {
         .sheet(isPresented: $showReport) {
             ThumbnailReportSheet(item: item)
                 .environmentObject(toast)
+        }
+        .onAppear { aiAvailability = currentAiAvailability() }
+        .onDisappear {
+            if #available(iOS 26.0, *) { (aiSession as? AiSession)?.close() }
         }
     }
 
@@ -229,6 +241,32 @@ struct DetailSheet: View {
                 }
             }
 
+            // 提案は決めつけず、選んで初めて付く形にする。外れたときの後始末が要らない
+            if showsAiEntryPoint(aiAvailability) {
+                if !suggestedTags.isEmpty {
+                    FlowLayout(spacing: 8) {
+                        ForEach(suggestedTags, id: \.self) { tag in
+                            SuggestedTagChip(tag: tag) {
+                                var updated = item
+                                updated.tags.append(tag)
+                                StashRepository.shared.updateItem(updated)
+                                suggestedTags.removeAll { $0 == tag }
+                            }
+                        }
+                    }
+                } else if suggestingTags {
+                    Text(L.s("ai_thinking"))
+                        .font(PokkeType.bodySmall)
+                        .foregroundStyle(Palette.neutral600)
+                } else {
+                    TextLink(
+                        text: L.s(suggestTagsFailed ? "ai_suggest_tags_retry" : "ai_suggest_tags_action"),
+                        icon: Lucide.sparkles,
+                        action: suggestTags
+                    )
+                }
+            }
+
             HStack(spacing: 8) {
                 PillField(focused: tagFieldFocused, height: 44) {
                     LucideIconView(icon: Lucide.tag, size: 15, color: Palette.neutral500)
@@ -272,6 +310,29 @@ struct DetailSheet: View {
             let ok = await ImageSaver.saveToPhotos(imageUrl: imageUrl, title: item.title)
             savingImage = false
             toast.show(L.s(ok ? "image_saved" : "image_save_failed"))
+        }
+    }
+
+    private func suggestTags() {
+        guard #available(iOS 26.0, *) else { return }
+        suggestingTags = true
+        suggestTagsFailed = false
+        let session = (aiSession as? AiSession) ?? {
+            let created = AiSession()
+            aiSession = created
+            return created
+        }()
+        // よく使うタグを先に見せて、新しい言い回しより再利用を優先させる
+        let vocabulary = AiDigest.tagVocabulary(allItems)
+        let prompt = AiDigest.buildTagPrompt(instruction: L.s("ai_tag_instruction"), item: item, vocabulary: vocabulary)
+        Task {
+            // 端末内モデルの失敗理由は控えめな機能なので、利用者には
+            // 「もう一度試す」だけ見せれば十分
+            let raw = (try? await session.suggestTags(prompt: prompt)) ?? []
+            let suggestions = AiDigest.refineTagSuggestions(raw, existing: item.tags, vocabulary: vocabulary)
+            suggestedTags = suggestions
+            suggestTagsFailed = suggestions.isEmpty
+            suggestingTags = false
         }
     }
 }
@@ -328,6 +389,31 @@ private struct TagChip: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L.s("action_delete") + " #\(tag)")
+    }
+}
+
+/// AIが提案したタグ。「#タグ ＋」。タップで付く
+private struct SuggestedTagChip: View {
+    let tag: String
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 5) {
+                Text("#\(tag)")
+                    .font(PokkeType.labelMedium)
+                    .foregroundStyle(Palette.accent800)
+                LucideIconView(icon: Lucide.plus, size: 12, color: Palette.accent700)
+            }
+            .padding(.leading, 12)
+            .padding(.trailing, 10)
+            .frame(height: 32)
+            .background(Capsule().fill(Palette.accent100))
+            .overlay(Capsule().stroke(Palette.accent.opacity(0.4), lineWidth: 1))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L.s("action_add") + " #\(tag)")
     }
 }
 

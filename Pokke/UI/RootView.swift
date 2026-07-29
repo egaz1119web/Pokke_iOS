@@ -94,7 +94,7 @@ struct RootView: View {
             get: { detailItem },
             set: { if $0 == nil { detailId = nil } }
         )) { item in
-            DetailSheet(item: item, collections: state.collections)
+            DetailSheet(item: item, collections: state.collections, allItems: state.items)
                 .environmentObject(toast)
         }
         .onAppear {

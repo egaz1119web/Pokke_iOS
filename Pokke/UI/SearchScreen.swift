@@ -8,6 +8,8 @@ struct SearchScreen: View {
     @State private var query = ""
     @State private var selectedTag: String?
     @FocusState private var fieldFocused: Bool
+    @State private var showAskAi = false
+    @State private var aiAvailability: AiAvailability = currentAiAvailability()
 
     private var allTags: [String] {
         Array(Set(state.items.flatMap(\.tags))).sorted()
@@ -35,6 +37,13 @@ struct SearchScreen: View {
 
                 SearchField(query: $query, focused: $fieldFocused)
                     .padding(.top, 4)
+
+                // 語が合うものを探すのが検索なら、こちらは「何が入っているか」を聞く口。
+                // 保存が0件だと答える材料が無いので出さない
+                if showsAiEntryPoint(aiAvailability), !state.items.isEmpty {
+                    AiAskBar(text: L.s("ai_ask_all_links")) { showAskAi = true }
+                        .padding(.top, 4)
+                }
 
                 if !allTags.isEmpty {
                     FlowLayout(spacing: 8) {
@@ -83,6 +92,20 @@ struct SearchScreen: View {
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
+        .onAppear { aiAvailability = currentAiAvailability() }
+        .sheet(isPresented: $showAskAi) {
+            AskAiSheet(
+                scopeLabel: L.s("ai_scope_all_links", state.items.count),
+                items: state.items,
+                suggestions: [
+                    L.s("ai_suggest_all_topics"),
+                    L.s("ai_suggest_all_recent"),
+                    L.s("ai_suggest_all_pick"),
+                ],
+                // 検索語を入れたまま開いたなら、それをそのまま質問の下書きにする
+                initialQuestion: query.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+        }
     }
 }
 
