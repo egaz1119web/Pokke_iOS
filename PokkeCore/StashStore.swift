@@ -27,4 +27,11 @@ enum StashStore {
         let text = StashJson.toJson(state)
         try? text.write(to: fileUrl, atomically: true, encoding: .utf8)
     }
+
+    /// ファイルごと消す。「データを全部削除」で使う。
+    /// 空の状態を書き込むのではなく消すのは、共有拡張側が次に書くまで
+    /// 何も残っていない状態にしたいため
+    static func clear() {
+        try? FileManager.default.removeItem(at: fileUrl)
+    }
 }

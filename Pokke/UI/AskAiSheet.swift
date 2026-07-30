@@ -1,20 +1,13 @@
 import SwiftUI
 
-/// 今すぐ呼べる、端末内AIの可否判定。
+/// 入口を出すかどうか。
 ///
-/// AndroidのAICore問い合わせと違い、`SystemLanguageModel.default.availability` は
-/// 同期プロパティなので、Android版のような「判定が終わるまで入口を隠す」待ち時間は無い。
-/// 画面が前面に来るたびに呼び直せば、設定でApple Intelligenceを有効にして
-/// 戻ってきた場合にも追従できる。
-func currentAiAvailability() -> AiAvailability { AiAssistant.availability() }
-
-/// 入口を出すかどうか。端末非対応・OSが古い場合だけ恒久的に隠す。
-/// 「設定でオフ」「モデル準備中」は入口自体は出し、聞いたときに理由を説明する
+/// 以前は「設定でオフ」「モデル準備中」でも入口を出し、聞いたときに理由を説明する
+/// 設計にしていたが、対応していない端末でも入口だけ見えてしまい紛らわしかった。
+/// 実際に生成まで通ることを確かめた（`.available`）ときだけ出す。
+/// 判定の中身は [AiAssistant.probeIfNeeded] を参照
 func showsAiEntryPoint(_ availability: AiAvailability) -> Bool {
-    switch availability {
-    case .deviceNotEligible, .unsupportedOSVersion: return false
-    case .available, .appleIntelligenceNotEnabled, .modelNotReady: return true
-    }
+    availability == .available
 }
 
 /// 保存したリンクについて端末内AIに聞くボトムシート。
@@ -151,7 +144,7 @@ struct AskAiSheet: View {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !thinking else { return }
         guard #available(iOS 26.0, *) else {
-            failure = .unavailable(currentAiAvailability())
+            failure = .unavailable(.unsupportedOSVersion)
             return
         }
         question = text

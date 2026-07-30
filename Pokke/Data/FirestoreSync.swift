@@ -103,6 +103,39 @@ final class FirestoreSync: ObservableObject {
         status = .off
     }
 
+    /// クラウドに置いた内容（users/{uid} ドキュメント）を消す。アカウント削除の一部。
+    ///
+    /// 呼ぶ前に [stop] してリスナーと送信を止めておくこと。止めずに消すと、
+    /// 手元の状態がそのまま書き戻されて消したはずの内容が復活する。
+    /// 認証が生きているうちに消す必要もある（Firestoreルールが本人のドキュメントしか許さない）。
+    func deleteRemoteData(uid: String) async throws {
+        let docRef = userDoc(uid)
+        // Firestoreはオフラインだと失敗を返さず保留し続けるので、push と同じく自前で打ち切る。
+        // ここで諦めずにアカウントを消すと、誰も消せないドキュメントが残ってしまう
+        let failure: Error? = await withCheckedContinuation { continuation in
+            let lock = NSLock()
+            var finished = false
+            func finish(_ error: Error?) {
+                lock.lock()
+                defer { lock.unlock() }
+                guard !finished else { return }
+                finished = true
+                continuation.resume(returning: error)
+            }
+            docRef.delete { error in finish(error) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.pushTimeoutSeconds) {
+                finish(DeleteError.timedOut)
+            }
+        }
+        if let failure { throw failure }
+    }
+
+    enum DeleteError: LocalizedError {
+        case timedOut
+
+        var errorDescription: String? { L.s("sync_error_unavailable") }
+    }
+
     /// 設定画面の「今すぐ同期」用。リスナーを張り直してサーバーの内容を取り直す
     func syncNow() {
         guard let uid = currentUid else { return }

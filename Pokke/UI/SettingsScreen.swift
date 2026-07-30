@@ -6,9 +6,12 @@ struct SettingsScreen: View {
 
     @ObservedObject private var auth = AuthService.shared
     @ObservedObject private var consent = AdsConsent.shared
+    @EnvironmentObject private var toast: ToastController
 
     @State private var loading = false
     @State private var message: String?
+    @State private var showDeleteConfirm = false
+    @State private var deleting = false
 
     var body: some View {
         ScrollView {
@@ -43,6 +46,11 @@ struct SettingsScreen: View {
                     }
                 }
 
+                SectionLabel(text: L.s("settings_data"))
+                    .padding(.top, 18)
+                    .padding(.bottom, 8)
+                deleteCard
+
                 if !auth.isConfigured {
                     Text(L.s("settings_firebase_not_configured"))
                         .font(PokkeType.bodySmall)
@@ -70,7 +78,21 @@ struct SettingsScreen: View {
             .padding(.bottom, bottomContentPadding)
         }
         .scrollIndicators(.hidden)
+        // 押し間違いを防ぐ確認。何が消えるのかを先に全部書いておく
+        .alert(
+            L.s(signedIn ? "delete_account_title" : "delete_local_title"),
+            isPresented: $showDeleteConfirm
+        ) {
+            Button(L.s("action_cancel"), role: .cancel) {}
+            Button(L.s("action_delete"), role: .destructive) {
+                Task { await deleteData() }
+            }
+        } message: {
+            Text(L.s(signedIn ? "delete_account_message" : "delete_local_message"))
+        }
     }
+
+    private var signedIn: Bool { auth.profile != nil }
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
@@ -118,12 +140,46 @@ struct SettingsScreen: View {
                 .padding(.top, 12)
                 // Googleだけだと審査ガイドライン4.8（サードパーティログインを使うなら
                 // 同等のログインも用意する）に抵触するため、Sign in with Appleも並べる
-                AppleSignInButton(enabled: !loading && auth.isConfigured) { result in
+                AppleSignInButton(enabled: !loading && auth.isConfigured, loading: loading) { result in
                     Task { await signInWithApple(result) }
                 }
                 .padding(.top, 10)
             }
         }
+    }
+
+    /// アカウントとデータの削除。
+    ///
+    /// ログイン中はアカウントごと消す（審査ガイドライン5.1.1(v)の要件で、アプリの中だけで
+    /// 完了できる必要がある）。未ログインでも端末に残る保存内容は消せるようにしておく。
+    @ViewBuilder
+    private var deleteCard: some View {
+        PokkeCard(padding: 0) {
+            if deleting {
+                HStack(spacing: 10) {
+                    ProgressView().controlSize(.small).tint(Palette.danger)
+                    Text(L.s("delete_account_deleting"))
+                        .font(PokkeType.labelMedium)
+                        .foregroundStyle(Palette.danger)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            } else {
+                SettingsLinkRow(
+                    icon: Lucide.trash,
+                    text: L.s(signedIn ? "settings_delete_account" : "settings_delete_local"),
+                    tint: Palette.danger
+                ) {
+                    showDeleteConfirm = true
+                }
+            }
+        }
+        Text(L.s(signedIn ? "settings_delete_account_note" : "settings_delete_local_note"))
+            .font(PokkeType.bodySmall)
+            .foregroundStyle(Palette.neutral600)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 8)
     }
 
     private var guideCard: some View {
@@ -159,6 +215,29 @@ struct SettingsScreen: View {
             // ユーザーが自分でシートを閉じた場合はGoogleのキャンセル同様、エラー表示はしない
             if let authError = error as? ASAuthorizationError, authError.code == .canceled { return }
             message = L.s("sign_in_error_generic", error.localizedDescription)
+        }
+    }
+
+    private func deleteData() async {
+        let wasSignedIn = signedIn
+        deleting = true
+        message = nil
+        let result: DeleteAccountResult
+        if wasSignedIn, let rootViewController = AuthService.rootViewController() {
+            result = await auth.deleteAccount(presenting: rootViewController)
+        } else {
+            AppDataReset.eraseLocal()
+            result = .success
+        }
+        deleting = false
+        switch result {
+        case .success:
+            toast.show(L.s(wasSignedIn ? "delete_account_done" : "delete_local_done"))
+        case .cancelled:
+            // 本人確認のログイン画面を自分で閉じた。何も消していない
+            break
+        case let .failure(messageKey, detail):
+            message = L.s(messageKey, detail ?? L.s("error_unknown"))
         }
     }
 
@@ -201,24 +280,46 @@ private struct GoogleSignInButton: View {
     }
 }
 
-/// Sign in with Apple ボタン。見た目はHIG準拠の公式スタイルをそのまま使い、
-/// 角丸だけ他のピルボタンに合わせている（HIGは角丸の変更を認めている）
+/// Sign in with Apple ボタン。
+///
+/// SwiftUIの `SignInWithAppleButton` は見た目こそHIG準拠だが、ラベルの文字が
+/// システムフォント（SF Pro）固定でアプリの書体（Figtree/Zen Maru Gothic）と
+/// 揃わず浮いて見える。HIGは公式ロゴマークさえ改変せずそのまま使えば自前ボタンを
+/// 作ってよいとしているので、Googleボタンと全く同じ見た目・書体で組み直している。
 private struct AppleSignInButton: View {
     let enabled: Bool
+    let loading: Bool
     let onCompletion: (Result<ASAuthorization, Error>) -> Void
 
     var body: some View {
-        SignInWithAppleButton(.signIn) { request in
-            request.requestedScopes = [.fullName, .email]
-            request.nonce = AuthService.shared.appleSignInRequest()
-        } onCompletion: { result in
-            onCompletion(result)
+        Button(action: start) {
+            HStack(spacing: 10) {
+                if loading {
+                    ProgressView().controlSize(.small).tint(Palette.accent)
+                } else {
+                    // "apple.logo" がAppleの公式ロゴマーク（SF Symbols）。改変せず使う
+                    Image(systemName: "apple.logo")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(enabled ? Palette.ink : Palette.neutral500)
+                    Text(L.s("settings_sign_in_apple"))
+                        .font(PokkeType.labelLarge)
+                        .foregroundStyle(enabled ? Palette.ink : Palette.neutral500)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(Capsule().fill(Palette.surface))
+            .overlay(Capsule().stroke(Palette.hairline, lineWidth: 1.5))
+            .contentShape(Capsule())
         }
-        .signInWithAppleButtonStyle(.black)
-        .frame(height: 48)
-        .clipShape(Capsule())
+        .buttonStyle(.pressScale(0.98))
         .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.6)
+    }
+
+    private func start() {
+        // 画面の出し方と委譲先の保持は AuthService 側にまとめてある
+        // （アカウント削除時の本人確認でも同じ道を通るため）
+        Task { onCompletion(await AuthService.shared.requestAppleAuthorization()) }
     }
 }
 
@@ -226,15 +327,17 @@ private struct AppleSignInButton: View {
 private struct SettingsLinkRow: View {
     let icon: Lucide.Icon
     let text: String
+    /// 削除のような取り消せない操作だけ色を変える
+    var tint: Color = Palette.accent700
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                LucideIconView(icon: icon, size: 17, color: Palette.accent700)
+                LucideIconView(icon: icon, size: 17, color: tint)
                 Text(text)
                     .font(PokkeType.labelMedium)
-                    .foregroundStyle(Palette.accent700)
+                    .foregroundStyle(tint)
                 Spacer(minLength: 0)
                 LucideIconView(icon: Lucide.chevronRight, size: 16, color: Palette.neutral400)
             }

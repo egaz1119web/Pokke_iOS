@@ -145,7 +145,7 @@ private struct CollectionDetail: View {
 
     @State private var showEdit = false
     @State private var showAskAi = false
-    @State private var aiAvailability: AiAvailability = currentAiAvailability()
+    @ObservedObject private var ai = AiAssistant.shared
 
     private var items: [StashItem] {
         state.items
@@ -159,7 +159,7 @@ private struct CollectionDetail: View {
                 LazyVStack(spacing: 10) {
                     header
                     // 中身が無いコレクションでは答える材料が無いので出さない
-                    if showsAiEntryPoint(aiAvailability), !items.isEmpty {
+                    if showsAiEntryPoint(ai.availability), !items.isEmpty {
                         AiAskBar(text: L.s("ai_ask_this_collection")) { showAskAi = true }
                     }
                     if items.isEmpty {
@@ -191,7 +191,7 @@ private struct CollectionDetail: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: showEdit)
-        .onAppear { aiAvailability = currentAiAvailability() }
+        .task { await AiAssistant.shared.probeIfNeeded() }
         .sheet(isPresented: $showAskAi) {
             AskAiSheet(
                 scopeLabel: L.s("ai_scope_collection", collection.name, items.count),

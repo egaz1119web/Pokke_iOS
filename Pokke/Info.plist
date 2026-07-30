@@ -9,8 +9,9 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 
-	<!-- 詳細画面の「保存」で、サムネイル画像を写真ライブラリのアルバム「Pokke」へ入れる。
-	     追加のみで既存の写真は読まないため .addOnly の権限しか要求しない。
+	<!-- 詳細画面の「保存」で、サムネイル画像を写真ライブラリへ入れる。
+	     追加のみで既存の写真は読まないため .addOnly の権限しか要求しない
+	     （そのためアルバムは作らない。詳細は ImageSaver.swift）。
 	     ここは開発言語(en)の文言で、ja/ko は InfoPlist.xcstrings 側で差し替わる -->
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Adds thumbnail images from your saved links to Photos.</string>

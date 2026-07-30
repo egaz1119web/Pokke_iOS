@@ -38,17 +38,52 @@ enum AiProgress {
 /// 端末内AIが使えるかの判定。
 ///
 /// SDKに触れるのはこのファイル（と `AiSession`）だけ。
-/// `availability()` はどのiOSバージョンからでも安全に呼べる
-/// （内部で `#available` に分岐するので、呼び出し側でバージョンガードは不要）。
-enum AiAssistant {
+///
+/// **OSの申告だけを信じてはいけない**。`SystemLanguageModel.default.availability` が
+/// `.available` を返してもモデルの実体が無く、実際に生成させると
+/// `ModelManagerError 1026` で必ず失敗する端末がある（Apple Intelligenceを
+/// 有効にしていない実機やシミュレータで確認）。押しても必ず失敗する入口を
+/// 出さないために、申告が通ったあと**短い生成を1回試して**から使えると判断する。
+///
+/// 判定はアプリの起動ごとに1回だけ。結果が出るまでは入口を出さない
+/// （出してから消えるより、少し遅れて現れる方が混乱が小さい）。
+@MainActor
+final class AiAssistant: ObservableObject {
 
-    static func availability() -> AiAvailability {
-        guard #available(iOS 26.0, *) else { return .unsupportedOSVersion }
-        return currentAvailability()
+    static let shared = AiAssistant()
+
+    /// 試し撃ちが済むまでは「準備中」＝入口を出さない
+    @Published private(set) var availability: AiAvailability = .modelNotReady
+
+    private var probing = false
+    private var probed = false
+
+    private init() {}
+
+    /// 起動後に一度だけ確かめる。画面が出るたびに呼んでも二重には走らない
+    func probeIfNeeded() async {
+        guard !probed, !probing else { return }
+        probing = true
+        defer { probing = false }
+
+        let declared = Self.declaredAvailability()
+        guard declared == .available else {
+            availability = declared
+            probed = true
+            return
+        }
+        guard #available(iOS 26.0, *) else {
+            availability = .unsupportedOSVersion
+            probed = true
+            return
+        }
+        availability = await Self.canActuallyGenerate() ? .available : .modelNotReady
+        probed = true
     }
 
-    @available(iOS 26.0, *)
-    private static func currentAvailability() -> AiAvailability {
+    /// OS・端末が申告する可否
+    private static func declaredAvailability() -> AiAvailability {
+        guard #available(iOS 26.0, *) else { return .unsupportedOSVersion }
         switch SystemLanguageModel.default.availability {
         case .available:
             return .available
@@ -61,6 +96,22 @@ enum AiAssistant {
         case .unavailable:
             // 将来追加されるかもしれない理由。恒久扱いにはせず、待てば直る可能性を残す
             return .modelNotReady
+        }
+    }
+
+    /// ごく短い生成を1回通してみる。モデルの実体が無ければここで落ちる
+    @available(iOS 26.0, *)
+    private static func canActuallyGenerate() async -> Bool {
+        do {
+            let session = LanguageModelSession()
+            _ = try await session.respond(
+                to: "ok",
+                options: GenerationOptions(maximumResponseTokens: 1)
+            )
+            return true
+        } catch {
+            log("端末内AIの試し撃ちに失敗した（入口は出さない）", error)
+            return false
         }
     }
 }
@@ -103,6 +154,7 @@ final class AiSession {
                 } catch is CancellationError {
                     continuation.finish()
                 } catch {
+                    log("生成に失敗した", error)
                     continuation.finish(throwing: AiError(failure: .generationFailed))
                 }
             }
@@ -116,6 +168,7 @@ final class AiSession {
             let response = try await engine().respond(to: prompt, generating: TagSuggestions.self, options: options)
             return response.content.tags
         } catch {
+            log("タグの提案に失敗した", error)
             throw AiError(failure: .generationFailed)
         }
     }
@@ -123,4 +176,11 @@ final class AiSession {
     func close() {
         session = nil
     }
+}
+
+/// 端末内AIのつまずきを追うためのログ。
+/// `xcrun simctl spawn booted log stream --predicate 'eventMessage CONTAINS "PokkeAi"'`
+/// または Console.app で "PokkeAi" を絞り込む（Android版の `adb logcat -s PokkeAi` 相当）
+func log(_ message: String, _ error: Error) {
+    print("[PokkeAi] \(message): \(error)")
 }

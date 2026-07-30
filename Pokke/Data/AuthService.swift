@@ -28,6 +28,13 @@ enum SignInResult {
     case failure(messageKey: String, detail: String?)
 }
 
+/// アカウント削除の結果。`cancelled` は本人確認のログイン画面を自分で閉じた場合
+enum DeleteAccountResult {
+    case success
+    case cancelled
+    case failure(messageKey: String, detail: String?)
+}
+
 /// Google / Apple のログイン ＋ Firebase Authへのサインイン。
 ///
 /// App Store ガイドライン4.8「サードパーティログインを使うなら同等のログインも用意する」に
@@ -52,6 +59,22 @@ final class AuthService: ObservableObject {
     /// リプレイ攻撃対策としてAppleにはこれのSHA256だけを渡し、
     /// Firebase側の検証には生値を渡す
     private var currentAppleNonce: String?
+
+    /// Appleのログイン中だけ生きている委譲先。フロー中に解放されると応答が来ない
+    private var appleCoordinator: AppleAuthorizationCoordinator?
+
+    /// サインイン／本人確認のやり直しで共通に使う材料
+    private struct AuthMaterial {
+        let credential: AuthCredential
+        /// Appleのみ。アカウント削除時のトークン失効に使う
+        var appleAuthorizationCode: String?
+    }
+
+    private enum CredentialResult {
+        case success(AuthMaterial)
+        case cancelled
+        case failure(messageKey: String, detail: String?)
+    }
 
     private init() {}
 
@@ -99,6 +122,18 @@ final class AuthService: ObservableObject {
 
     /// Googleログイン画面を出し、Firebase Authへ接続して同期を開始する
     func signInWithGoogle(presenting: UIViewController) async -> SignInResult {
+        switch await googleCredential(presenting: presenting) {
+        case let .success(material):
+            return await signIn(with: material.credential)
+        case .cancelled:
+            return .cancelled
+        case let .failure(messageKey, detail):
+            return .failure(messageKey: messageKey, detail: detail)
+        }
+    }
+
+    /// 本人確認のやり直しにも使うので、資格情報を作るところだけ切り出してある
+    private func googleCredential(presenting: UIViewController) async -> CredentialResult {
         guard let clientId = FirebaseApp.app()?.options.clientID else {
             return .failure(messageKey: "sign_in_error_no_id_token", detail: nil)
         }
@@ -113,7 +148,7 @@ final class AuthService: ObservableObject {
                 withIDToken: idToken,
                 accessToken: result.user.accessToken.tokenString
             )
-            return await signIn(with: credential)
+            return .success(AuthMaterial(credential: credential))
         } catch let error as NSError {
             if error.domain == kGIDSignInErrorDomain, error.code == GIDSignInError.canceled.rawValue {
                 // ユーザーが自分で閉じた。エラー表示はしない
@@ -130,8 +165,33 @@ final class AuthService: ObservableObject {
         return Self.sha256(nonce)
     }
 
-    /// `SignInWithAppleButton` の `onCompletion` が成功を返したら呼ぶ
+    /// Appleのログイン画面を出す。ボタン側で `ASAuthorizationController` を組む代わりに
+    /// ここで面倒を見るので、本人確認のやり直し（アカウント削除）でも同じ道を通れる
+    func requestAppleAuthorization() async -> Result<ASAuthorization, Error> {
+        await withCheckedContinuation { continuation in
+            // フロー中に解放されると何も返ってこなくなるので、返答まで持っておく
+            let coordinator = AppleAuthorizationCoordinator { [weak self] result in
+                self?.appleCoordinator = nil
+                continuation.resume(returning: result)
+            }
+            appleCoordinator = coordinator
+            coordinator.start(nonce: appleSignInRequest())
+        }
+    }
+
+    /// `requestAppleAuthorization()` が成功を返したら呼ぶ
     func signInWithApple(authorization: ASAuthorization) async -> SignInResult {
+        switch appleMaterial(from: authorization) {
+        case let .success(material):
+            return await signIn(with: material.credential)
+        case .cancelled:
+            return .cancelled
+        case let .failure(messageKey, detail):
+            return .failure(messageKey: messageKey, detail: detail)
+        }
+    }
+
+    private func appleMaterial(from authorization: ASAuthorization) -> CredentialResult {
         guard let appleCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
             return .failure(messageKey: "sign_in_error_no_id_token", detail: nil)
         }
@@ -151,7 +211,10 @@ final class AuthService: ObservableObject {
             rawNonce: nonce,
             fullName: appleCredential.fullName
         )
-        return await signIn(with: credential)
+        // authorizationCode はアカウント削除時のトークン失効に使う。1回しか使えない
+        let code = appleCredential.authorizationCode
+            .flatMap { String(data: $0, encoding: .utf8) }
+        return .success(AuthMaterial(credential: credential, appleAuthorizationCode: code))
     }
 
     private func signIn(with credential: AuthCredential) async -> SignInResult {
@@ -168,6 +231,97 @@ final class AuthService: ObservableObject {
                 return .failure(messageKey: "sign_in_error_firebase", detail: nil)
             }
             return .failure(messageKey: "sign_in_error_generic", detail: error.localizedDescription)
+        }
+    }
+
+    /// アカウントとデータを消す。App Store審査ガイドライン5.1.1(v)の要件。
+    ///
+    /// 「アカウントを無効にする」では足りず、アプリの中だけで削除まで完了する必要がある。
+    /// 順番が大事で、途中で失敗したら**アカウントは消さない**（消してしまうと
+    /// クラウドに残った内容を誰も消せなくなる）。
+    ///  1. 本人確認をやり直す — Firebaseは古いセッションのままの削除を拒む
+    ///  2. クラウドの内容（users/{uid}）を消す — 認証が生きているうちでないとルールに弾かれる
+    ///  3. Appleのトークンを失効させる — Sign in with Apple を使うアプリの義務
+    ///  4. アカウント本体を消す
+    ///  5. 端末に残っているものを消す
+    func deleteAccount(presenting: UIViewController) async -> DeleteAccountResult {
+        guard let user = Auth.auth().currentUser else {
+            // 既にサインアウトしている。消せるのは端末のぶんだけ
+            AppDataReset.eraseLocal()
+            return .success
+        }
+        let uid = user.uid
+        let provider = profile?.provider ?? toProfile(user).provider
+
+        var appleAuthorizationCode: String?
+        if let provider {
+            let material: AuthMaterial
+            switch await freshCredential(for: provider, presenting: presenting) {
+            case let .success(value): material = value
+            case .cancelled: return .cancelled
+            case let .failure(messageKey, detail):
+                return .failure(messageKey: messageKey, detail: detail)
+            }
+            appleAuthorizationCode = material.appleAuthorizationCode
+            do {
+                try await user.reauthenticate(with: material.credential)
+            } catch {
+                return .failure(messageKey: "delete_account_error_reauth", detail: nil)
+            }
+        }
+
+        FirestoreSync.shared.stop()
+        do {
+            try await FirestoreSync.shared.deleteRemoteData(uid: uid)
+        } catch {
+            // クラウドが消せていないのでアカウントは残す。同期も元に戻しておく
+            FirestoreSync.shared.start(uid: uid)
+            return .failure(
+                messageKey: "delete_account_error_cloud",
+                detail: (error as NSError).localizedDescription
+            )
+        }
+
+        if let appleAuthorizationCode {
+            // 失効に失敗しても削除は続ける。ここで止めると
+            // クラウドを消した状態でアカウントだけ残ってしまう
+            try? await Auth.auth().revokeToken(withAuthorizationCode: appleAuthorizationCode)
+        }
+
+        do {
+            try await user.delete()
+        } catch {
+            return .failure(
+                messageKey: "delete_account_error_generic",
+                detail: (error as NSError).localizedDescription
+            )
+        }
+
+        GIDSignIn.sharedInstance.signOut()
+        try? Auth.auth().signOut()
+        profile = nil
+        AppDataReset.eraseLocal()
+        return .success
+    }
+
+    /// 本人確認をやり直すための資格情報を取り直す（削除の直前にログインし直してもらう）
+    private func freshCredential(
+        for provider: AuthProviderKind,
+        presenting: UIViewController
+    ) async -> CredentialResult {
+        switch provider {
+        case .google:
+            return await googleCredential(presenting: presenting)
+        case .apple:
+            switch await requestAppleAuthorization() {
+            case let .success(authorization):
+                return appleMaterial(from: authorization)
+            case let .failure(error):
+                if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+                    return .cancelled
+                }
+                return .failure(messageKey: "sign_in_error_generic", detail: error.localizedDescription)
+            }
         }
     }
 
@@ -225,5 +379,46 @@ final class AuthService: ObservableObject {
         SHA256.hash(data: Data(input.utf8))
             .compactMap { String(format: "%02x", $0) }
             .joined()
+    }
+}
+
+/// `ASAuthorizationController` の委譲先。`AuthService` が返答まで保持する
+private final class AppleAuthorizationCoordinator: NSObject,
+    ASAuthorizationControllerDelegate,
+    ASAuthorizationControllerPresentationContextProviding {
+
+    private let onCompletion: (Result<ASAuthorization, Error>) -> Void
+
+    init(onCompletion: @escaping (Result<ASAuthorization, Error>) -> Void) {
+        self.onCompletion = onCompletion
+    }
+
+    /// - Parameter nonce: `AuthService.appleSignInRequest()` が返すSHA256済みの値
+    func start(nonce: String) {
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = nonce
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        controller.performRequests()
+    }
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        onCompletion(.success(authorization))
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        onCompletion(.failure(error))
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
     }
 }

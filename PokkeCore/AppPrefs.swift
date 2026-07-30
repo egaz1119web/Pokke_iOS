@@ -61,4 +61,28 @@ final class AppPrefs: ObservableObject {
         viewMode = mode
         defaults.set(mode.rawValue, forKey: Key.viewMode)
     }
+
+    /// 端末ローカルの設定を初期状態へ戻す（[AppDataReset] から呼ぶ）
+    func resetAll() {
+        for key in [Key.onboarded, Key.viewMode, Key.firstLaunchAt, Key.reviewRequested] {
+            defaults.removeObject(forKey: key)
+        }
+        viewMode = .list
+        // 消したままだと0になり「使い始めてどれくらいか」の判定が壊れるので入れ直す
+        firstLaunchAt = nowMillis()
+        defaults.set(firstLaunchAt, forKey: Key.firstLaunchAt)
+    }
+}
+
+/// 端末に残っているアプリのデータを消す口。
+///
+/// 保存した内容（stash.json）と端末ローカルの設定（UserDefaults）は別々に持っているので、
+/// 消し忘れが出ないよう1か所にまとめている。アカウント（Firebase Auth）とクラウドの
+/// 内容には触らない — そちらは `AuthService.deleteAccount` の担当。
+@MainActor
+enum AppDataReset {
+    static func eraseLocal() {
+        StashRepository.shared.deleteEverything()
+        AppPrefs.shared.resetAll()
+    }
 }

@@ -378,16 +378,20 @@ final class ToastController: ObservableObject {
         // 連続で出したときに前の消去タイマーで消えないよう、毎回引き直す
         task?.cancel()
         task = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_800_000_000)
+            // AndroidのToast.LENGTH_SHORT（約2秒）と同じくらい。
+            // これより短いと和文を読み切る前に消えてしまう
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
             guard !Task.isCancelled else { return }
             self?.message = nil
         }
     }
 }
 
-/// トースト本体。ボトムナビに被らないよう下から96pt上げる
+/// トースト本体。ボトムナビに被らないよう既定で下から96pt上げる
 struct ToastHost: View {
     @ObservedObject var controller: ToastController
+    /// シートの上に重ねるときはボトムナビが無いので詰める
+    var bottomPadding: CGFloat = 96
 
     var body: some View {
         ZStack {
@@ -404,8 +408,19 @@ struct ToastHost: View {
         }
         .animation(.easeOut(duration: 0.25), value: controller.message)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 96)
+        .padding(.bottom, bottomPadding)
         .allowsHitTesting(false)
+    }
+}
+
+extension View {
+    /// シートの中から出したトーストを、そのシート自身の上に重ねる。
+    ///
+    /// `RootView` に置いた [ToastHost] はシートより下の層にいるので、
+    /// シートを閉じない操作（画像の保存など）ではトーストが背後に隠れて
+    /// 「押しても何も起きない」ように見えてしまう。
+    func toastOverlay(_ controller: ToastController, bottomPadding: CGFloat = 34) -> some View {
+        overlay(ToastHost(controller: controller, bottomPadding: bottomPadding))
     }
 }
 

@@ -173,6 +173,8 @@ enum Lucide {
     static let x = icon("X", "M18 6 6 18", "m6 6 12 12")
     static let chevronLeft = icon("ChevronLeft", "m15 18-6-6 6-6")
     static let chevronRight = icon("ChevronRight", "m9 18 6-6-6-6")
+    static let chevronDown = icon("ChevronDown", "m6 9 6 6 6-6")
+    static let chevronUp = icon("ChevronUp", "m18 15-6-6-6 6")
 
     static let bookOpen = icon(
         "BookOpen",

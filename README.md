@@ -51,10 +51,25 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 - **リンクは常に端末の既定ブラウザで開く**: `SFSafariViewController` も試したが、
   Xのようにアプリ側へ誘導するサービスで正しく表示できなかったため取りやめた
   ([`Common.swift`](Pokke/UI/Common.swift) の `openLink`)
-- **画像の保存先は写真ライブラリのアルバム「Pokke」**: iOSに `Pictures/Pokke` に当たる
-  アプリ専用フォルダが無いため。権限は追加のみ（`NSPhotoLibraryAddUsageDescription`）
+- **画像は写真ライブラリへそのまま追加する**: iOSに `Pictures/Pokke` に当たる
+  アプリ専用フォルダが無いため。権限は追加のみ（`NSPhotoLibraryAddUsageDescription`）。
+  **アルバムは作らない** — アルバムを作る・探すには読み取りと変更の権限
+  （`NSPhotoLibraryUsageDescription`）が要り、追加専用の許可しか宣言していない状態で
+  そのAPIに触るとiOSがアプリを強制終了させる
+- **シートの中から出すトーストはシート自身に重ねる**: `RootView` に置いた `ToastHost` は
+  presentationの下の層にいるので、シートを閉じない操作（画像の保存など）では背後に隠れて
+  「押しても何も起きない」ように見える。`.toastOverlay(_:)` を使う
+  ([`Components.swift`](Pokke/UI/Components.swift))
+- **端末内AIは「試し撃ち」してから入口を出す**: `SystemLanguageModel` が `.available` を
+  返してもモデルの実体が無く、生成させると `ModelManagerError 1026` で必ず失敗する
+  端末がある。短い生成を1回通してから使えると判断している（`AiAssistant.probeIfNeeded`）
 - **ログインはGoogleに加えてSign in with Appleも用意**: App Store審査ガイドライン4.8対応
   （詳細は上の「ログイン / クラウド同期」）
+- **設定画面にアカウント削除がある**: 審査ガイドライン5.1.1(v)対応。アカウントを作れる
+  アプリは、アプリの中だけで削除まで完了できる必要がある（無効化では足りない）。
+  `AuthService.deleteAccount` の順番が肝で、**途中で失敗したらアカウントは消さない**
+  — 先にアカウントを消すとFirestoreルール（本人しか触れない）のせいで
+  クラウドに残った内容を誰も消せなくなる。Android版にはまだ無い
 - **ネイティブ広告に MediaView を入れている**: iOSのAdMob SDKに入っている広告バリデータが
   「メイン画像/動画にMediaViewを使っていない」を実装エラーとして出すため。
   Androidのレイアウトには無い要素なので、そこだけ縦に1枚多い

@@ -17,7 +17,7 @@ struct DetailSheet: View {
     @FocusState private var tagFieldFocused: Bool
 
     // タグ提案は毎回聞きに行くと待たされるだけなので、開いている間だけエンジンを使い回す
-    @State private var aiAvailability: AiAvailability = currentAiAvailability()
+    @ObservedObject private var ai = AiAssistant.shared
     @State private var aiSession: AnyObject?
     @State private var suggestedTags: [String] = []
     @State private var suggestingTags = false
@@ -93,6 +93,8 @@ struct DetailSheet: View {
         } message: {
             Text(item.title)
         }
+        // シートを閉じずに出すトーストは、シート自身の上に重ねないと見えない
+        .toastOverlay(toast)
         .fullScreenCover(isPresented: $showImageViewer) {
             if let imageUrl = item.imageUrl {
                 ImageViewerView(
@@ -101,13 +103,14 @@ struct DetailSheet: View {
                     onSave: { saveImage(imageUrl) }
                 )
                 .presentationBackground(.clear)
+                .toastOverlay(toast, bottomPadding: 96)
             }
         }
         .sheet(isPresented: $showReport) {
             ThumbnailReportSheet(item: item)
                 .environmentObject(toast)
         }
-        .onAppear { aiAvailability = currentAiAvailability() }
+        .task { await AiAssistant.shared.probeIfNeeded() }
         .onDisappear {
             if #available(iOS 26.0, *) { (aiSession as? AiSession)?.close() }
         }
@@ -151,7 +154,9 @@ struct DetailSheet: View {
             }
             StackedActionButton(
                 icon: Lucide.download,
-                label: L.s("action_save"),
+                // 画像の取得に少し時間がかかる。押した直後に見た目が変わらないと
+                // 反応していないように見えるので、終わるまでラベルを差し替える
+                label: L.s(savingImage ? "image_saving" : "action_save"),
                 // 画像が無ければ保存しようがないので押せなくする
                 enabled: item.imageUrl != nil && !savingImage
             ) {
@@ -242,7 +247,7 @@ struct DetailSheet: View {
             }
 
             // 提案は決めつけず、選んで初めて付く形にする。外れたときの後始末が要らない
-            if showsAiEntryPoint(aiAvailability) {
+            if showsAiEntryPoint(ai.availability) {
                 if !suggestedTags.isEmpty {
                     FlowLayout(spacing: 8) {
                         ForEach(suggestedTags, id: \.self) { tag in

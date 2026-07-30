@@ -100,6 +100,8 @@ struct ThumbnailReportSheet: View {
         .presentationDragIndicator(.hidden)
         .presentationBackground(Palette.bg)
         .presentationDetents([.fraction(0.82)])
+        // 開けなかったことを知らせるトーストは、このシートの上に重ねないと見えない
+        .toastOverlay(toast)
     }
 
     // 「アプリ内で開く」設定には従わず、常に外部ブラウザへ渡す。

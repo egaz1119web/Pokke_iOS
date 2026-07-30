@@ -211,6 +211,14 @@ final class StashRepository: ObservableObject {
         return url
     }
 
+    /// 保存した内容をすべて捨てる。設定画面の削除（アカウント削除・端末のデータ削除）で使う。
+    ///
+    /// `mutate` を通さないのは、空にしたJSONを書き戻すのではなくファイルごと消したいため
+    func deleteEverything() {
+        state = StashState()
+        StashStore.clear()
+    }
+
     private func mutate(_ transform: (inout StashState) -> Void) {
         var next = state
         transform(&next)

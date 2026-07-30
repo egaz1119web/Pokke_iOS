@@ -9,10 +9,23 @@ struct SearchScreen: View {
     @State private var selectedTag: String?
     @FocusState private var fieldFocused: Bool
     @State private var showAskAi = false
-    @State private var aiAvailability: AiAvailability = currentAiAvailability()
+    @ObservedObject private var ai = AiAssistant.shared
+    @State private var tagsExpanded = false
+    /// タグを全部並べるのに要した行数。FlowLayoutが実測して知らせてくる
+    @StateObject private var tagRowCount = FlowRowCount()
+
+    /// タグが増えるほど検索結果が下に押し出されて見にくくなるので、
+    /// 既定ではこの行数までに抑えて残りは展開で見せる
+    private let collapsedTagRows = 3
 
     private var allTags: [String] {
         Array(Set(state.items.flatMap(\.tags))).sorted()
+    }
+
+    /// 開閉チップを出すか。3行に収まっているうちは要らない。
+    /// 展開中は「閉じる」として必要なので、畳めるかどうかとは別に見る
+    private var showsTagToggle: Bool {
+        tagsExpanded || tagRowCount.rows > collapsedTagRows
     }
 
     private var results: [StashItem] {
@@ -40,20 +53,35 @@ struct SearchScreen: View {
 
                 // 語が合うものを探すのが検索なら、こちらは「何が入っているか」を聞く口。
                 // 保存が0件だと答える材料が無いので出さない
-                if showsAiEntryPoint(aiAvailability), !state.items.isEmpty {
+                if showsAiEntryPoint(ai.availability), !state.items.isEmpty {
                     AiAskBar(text: L.s("ai_ask_all_links")) { showAskAi = true }
                         .padding(.top, 4)
                 }
 
                 if !allTags.isEmpty {
-                    FlowLayout(spacing: 8) {
-                        ForEach(allTags, id: \.self) { tag in
-                            ServiceChip(
-                                label: "#\(tag)",
-                                count: state.items.filter { $0.tags.contains(tag) }.count,
-                                selected: selectedTag == tag
-                            ) {
-                                selectedTag = selectedTag == tag ? nil : tag
+                    // 開閉のチップはタグの列には混ぜず、下に独立して置く。
+                    // 列の中に入れると畳んでいる間その分のタグが押し出されて見えなくなる
+                    VStack(alignment: .leading, spacing: 8) {
+                        FlowLayout(
+                            spacing: 8,
+                            maxRows: tagsExpanded ? nil : collapsedTagRows,
+                            rowCount: tagRowCount
+                        ) {
+                            ForEach(allTags, id: \.self) { tag in
+                                ServiceChip(
+                                    label: "#\(tag)",
+                                    count: state.items.filter { $0.tags.contains(tag) }.count,
+                                    selected: selectedTag == tag
+                                ) {
+                                    selectedTag = selectedTag == tag ? nil : tag
+                                }
+                            }
+                        }
+                        .clipped()
+
+                        if showsTagToggle {
+                            TagToggleChip(expanded: tagsExpanded) {
+                                withAnimation(.easeInOut(duration: 0.2)) { tagsExpanded.toggle() }
                             }
                         }
                     }
@@ -92,7 +120,7 @@ struct SearchScreen: View {
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
-        .onAppear { aiAvailability = currentAiAvailability() }
+        .task { await AiAssistant.shared.probeIfNeeded() }
         .sheet(isPresented: $showAskAi) {
             AskAiSheet(
                 scopeLabel: L.s("ai_scope_all_links", state.items.count),
@@ -129,54 +157,124 @@ private struct SearchField: View {
     }
 }
 
-/// 折り返して並ぶチップ列。Composeの `FlowRow` 相当
+/// [FlowLayout] が実測した行数を受け取る箱。
+///
+/// クロージャで受けようとすると2つ問題が出る。`Layout` は `Sendable` を要求するので
+/// `@Sendable` が必要になり、さらに引数の最後がクロージャだと
+/// `FlowLayout(spacing: 8) { チップ… }` の中身がそちらの引数として解決されてしまう。
+/// `@MainActor` のクラスなら暗黙に `Sendable` で、引数の型も関数ではないので両方避けられる。
+@MainActor
+final class FlowRowCount: ObservableObject {
+    @Published fileprivate(set) var rows = 0
+
+    fileprivate func update(_ value: Int) {
+        // 同じ値で入れ直すとレイアウトが延々と走り続ける
+        if rows != value { rows = value }
+    }
+}
+
+/// 折り返して並ぶチップ列。Composeの `FlowRow` 相当。
+///
+/// `maxRows` を渡すとその行数までしか見せない。行を隠す判断をレイアウト側で
+/// 済ませているのが要点で、外から `GeometryReader` で高さを測って
+/// `frame(height:)` で切る方式にすると、**制約後の高さを測ってしまう**ため
+/// 「もう3行に収まっている」と誤判定して二度と展開できなくなる。
+///
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
+    /// 表示する行数の上限。nil なら全部見せる
+    var maxRows: Int?
+    /// 全部並べるのに要した行数の受け取り先。開閉チップを出すかの判定に使う
+    var rowCount: FlowRowCount?
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.replacingUnspecifiedDimensions().width
         let rows = arrange(subviews: subviews, in: width)
-        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(0, rows.count - 1))
+        report(rows.count)
+        let visible = visibleRows(rows)
+        let height = visible.map(\.height).reduce(0, +) + spacing * CGFloat(max(0, visible.count - 1))
         return CGSize(width: width, height: height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = arrange(subviews: subviews, in: bounds.width)
+        let shown = visibleRows(rows).count
         var y = bounds.minY
-        for row in arrange(subviews: subviews, in: bounds.width) {
+        for (rowIndex, row) in rows.enumerated() {
             var x = bounds.minX
             for index in row.indices {
                 let size = subviews[index].sizeThatFits(.unspecified)
-                subviews[index].place(
-                    at: CGPoint(x: x, y: y),
-                    proposal: ProposedViewSize(size)
-                )
+                // 上限を超えた行は画面の遥か上へ逃がす。返した高さの中に置くと
+                // clipped() をすり抜けたタップを拾ってしまうことがあるため、
+                // スクロール領域の外まで離す
+                let position = rowIndex < shown
+                    ? CGPoint(x: x, y: y)
+                    : CGPoint(x: bounds.minX, y: bounds.minY - 10_000)
+                subviews[index].place(at: position, proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
-            y += row.height + spacing
+            if rowIndex < shown { y += row.height + spacing }
         }
+    }
+
+    private func visibleRows(_ rows: [Row]) -> [Row] {
+        guard let maxRows else { return rows }
+        return Array(rows.prefix(maxRows))
+    }
+
+    /// レイアウトの最中に状態を変えると警告になるので、次の実行に回す
+    private func report(_ count: Int) {
+        guard let rowCount else { return }
+        Task { @MainActor in rowCount.update(count) }
     }
 
     private struct Row {
         var indices: [Int] = []
         var height: CGFloat = 0
+        var width: CGFloat = 0
     }
 
     private func arrange(subviews: Subviews, in width: CGFloat) -> [Row] {
         var rows: [Row] = []
         var current = Row()
-        var x: CGFloat = 0
         for index in subviews.indices {
             let size = subviews[index].sizeThatFits(.unspecified)
-            if !current.indices.isEmpty, x + size.width > width {
+            let extended = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            if !current.indices.isEmpty, extended > width {
                 rows.append(current)
                 current = Row()
-                x = 0
             }
+            current.width = current.indices.isEmpty ? size.width : current.width + spacing + size.width
             current.indices.append(index)
             current.height = max(current.height, size.height)
-            x += size.width + spacing
         }
         if !current.indices.isEmpty { rows.append(current) }
         return rows
+    }
+}
+
+/// タグ一覧の開閉チップ。[ServiceChip] と同じ高さにしてタグの列に馴染ませる
+private struct TagToggleChip: View {
+    let expanded: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Text(L.s(expanded ? "search_tags_show_less" : "search_tags_show_more"))
+                    .font(PokkeType.labelMedium)
+                    .foregroundStyle(Palette.accent700)
+                LucideIconView(
+                    icon: expanded ? Lucide.chevronUp : Lucide.chevronDown,
+                    size: 14,
+                    color: Palette.accent700
+                )
+            }
+            .padding(.horizontal, 13)
+            .frame(height: 34)
+            .background(Capsule().fill(Palette.accent100))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.pressScale(0.95))
     }
 }
