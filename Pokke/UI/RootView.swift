@@ -49,6 +49,10 @@ struct RootView: View {
     @State private var openedCollectionId: String?
     /// 初回起動時は共有からの保存方法を案内する
     @State private var showGuide = false
+    /// ホームに重ねるスポットライト案内の現在のコマ。出していないときは nil
+    @State private var tourStep: Int?
+    /// スポットライトで指す、練習で保存できた1件
+    @State private var tourItemId: String?
 
     private var state: StashState { repository.state }
 
@@ -72,15 +76,35 @@ struct RootView: View {
 
             ToastHost(controller: toast)
         }
+        .overlayPreferenceValue(SpotlightAnchorKey.self) { anchors in
+            GeometryReader { proxy in
+                if let tourStep {
+                    SpotlightOverlay(
+                        steps: SpotlightStep.afterFirstSave,
+                        index: tourStep,
+                        hole: holeRect(step: tourStep, anchors: anchors, proxy: proxy),
+                        size: proxy.size,
+                        onNext: { advanceTour() },
+                        onClose: { endTour() }
+                    )
+                    .transition(.opacity)
+                }
+            }
+            // 案内はステータスバーやホームインジケータの帯まで覆う。
+            // 穴の座標もこの全画面の枠を基準に解く
+            .ignoresSafeArea()
+            .allowsHitTesting(tourStep != nil)
+        }
         .environmentObject(toast)
         // Android版が lightColorScheme 固定なので、見た目を揃えるためライトに固定する
         .preferredColorScheme(.light)
         // 案内は重ねるのではなく画面を占有させる。共有シートを実際に開いて練習する
         // 手順があり、後ろの一覧が透けているとどこを見ればよいのか分からなくなる
         .fullScreenCover(isPresented: $showGuide) {
-            OnboardingFlow {
+            OnboardingFlow { savedItem in
                 showGuide = false
                 AppPrefs.shared.markOnboarded()
+                if let savedItem { startTour(savedItemId: savedItem.id) }
             }
         }
         .sheet(isPresented: $showAdd) {
@@ -110,12 +134,59 @@ struct RootView: View {
         }
     }
 
+    // MARK: - ホームのスポットライト案内
+
+    /// 初回案内で1件目を保存できた直後に始める。
+    ///
+    /// 案内の中で「保存できました」と見せるより、本物のホームに並んだところを
+    /// 指した方が早い。ついでに残りの使い方もその場の実物で説明する。
+    private func startTour(savedItemId: String) {
+        tab = .home
+        openedCollectionId = nil
+        tourItemId = savedItemId
+        Task {
+            // 案内の画面が閉じ切り、ホームの一覧が並ぶまで待つ。
+            // 先に出すと穴を開ける先がまだ無く、いきなり暗転だけが見える
+            try? await Task.sleep(for: .milliseconds(650))
+            withAnimation(.easeOut(duration: 0.3)) { tourStep = 0 }
+        }
+    }
+
+    private func advanceTour() {
+        guard let current = tourStep else { return }
+        let next = current + 1
+        if next < SpotlightStep.afterFirstSave.count {
+            withAnimation(.easeOut(duration: 0.3)) { tourStep = next }
+        } else {
+            endTour()
+        }
+    }
+
+    private func endTour() {
+        withAnimation(.easeOut(duration: 0.25)) { tourStep = nil }
+        tourItemId = nil
+    }
+
+    /// 今のコマが指す枠。畳まれていて画面に無い物は指さない（穴だけが宙に浮く）
+    private func holeRect(
+        step: Int,
+        anchors: [SpotlightTarget: Anchor<CGRect>],
+        proxy: GeometryProxy
+    ) -> CGRect? {
+        guard let anchor = anchors[SpotlightStep.afterFirstSave[step].target] else { return nil }
+        let inset = SpotlightStep.afterFirstSave[step].inset
+        let rect = proxy[anchor]
+        guard rect.midY > 0, rect.midY < proxy.size.height else { return nil }
+        return rect.insetBy(dx: -inset, dy: -inset)
+    }
+
     /// 使い込んでくれている人にだけ、Apple純正の星評価ダイアログを出す。
     ///
     /// 起動直後に重ねると操作を遮るので、画面が落ち着くまで少し待つ。
-    /// 初回案内が出ている間は譲る（条件的にほぼ重ならないが、重なると案内が隠れる）
+    /// 初回案内やスポットライトが出ている間は譲る
+    /// （条件的にほぼ重ならないが、重なると案内が隠れる）
     private func maybeRequestReview() {
-        guard !showGuide else { return }
+        guard !showGuide, tourStep == nil else { return }
         guard ReviewPrompt.shouldRequest(
             itemCount: state.items.count,
             firstLaunchAt: prefs.firstLaunchAt,
@@ -139,7 +210,8 @@ struct RootView: View {
                 state: state,
                 onItemTap: { detailId = $0.id },
                 onShowGuide: { showGuide = true },
-                onAddLink: { showAdd = true }
+                onAddLink: { showAdd = true },
+                highlightItemId: tourItemId
             )
         case .collections:
             CollectionsScreen(
@@ -180,6 +252,7 @@ private struct BottomNav: View {
             .padding(.horizontal, 10)
             .padding(.top, 8)
             .padding(.bottom, 10)
+            .spotlightAnchor(.nav)
         }
         // ホームインジケータの帯まで地を伸ばす。ここが透けると下の文字と重なって読めない
         .background {

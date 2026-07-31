@@ -5,14 +5,18 @@ import UIKit
 /// App Store に出たらそちらのURLへ差し替えること（RELEASE.md）
 private let practiceUrl = "https://pokke.op-sarada.workers.dev/"
 
-/// 初回起動の案内。3枚組み。
+/// 初回起動の案内。2枚組み。
 ///
 /// 1枚のダイアログに手順を並べる形だと「共有シートのどこにPokkeがいるのか」が
-/// 伝わらなかったため、読む→動く図で見る→そのまま1回やる→保存された物を見る、と流している。
+/// 伝わらなかったため、読む→動く図で見る→そのまま1回やる、と流している。
 /// いちど共有シートから保存するとOSが次からアプリの列の手前にPokkeを出すので、
 /// 「1回やってもらう」ことには案内以上の実利がある。
+///
+/// 保存できたら祝いのページは挟まず、そのままホームへ抜ける（[onFinish] に
+/// 保存された物を渡す）。実物の一覧が出てから、その上でスポットライトの案内を続ける。
 struct OnboardingFlow: View {
-    let onFinish: () -> Void
+    /// 案内の終わり。練習で保存できた場合はその1件を渡す
+    let onFinish: (StashItem?) -> Void
 
     @ObservedObject private var repository = StashRepository.shared
 
@@ -21,9 +25,8 @@ struct OnboardingFlow: View {
     @State private var waitingForShare = false
     /// 練習を始めた時点の保存済みID。ここに無いものが増えたら「保存された」と判る
     @State private var knownIds: Set<String> = []
-    @State private var savedItem: StashItem?
 
-    private let lastPage = 2
+    private let lastPage = 1
 
     var body: some View {
         ZStack {
@@ -53,7 +56,7 @@ struct OnboardingFlow: View {
             PageDots(count: lastPage + 1, current: page)
 
             HStack {
-                if page > 0 && page < lastPage {
+                if page > 0 {
                     CircleIconButton(
                         icon: Lucide.chevronLeft,
                         accessibilityLabel: L.s("onboarding_back")
@@ -62,17 +65,17 @@ struct OnboardingFlow: View {
                     }
                 }
                 Spacer(minLength: 0)
-                // 最後の1枚は行き先が「終わり」しか無いので、飛ばす導線は出さない
-                if page < lastPage {
-                    Button(action: onFinish) {
-                        Text(L.s("onboarding_skip"))
-                            .font(PokkeType.labelLarge)
-                            .foregroundStyle(Palette.neutral700)
-                            .padding(.vertical, 8)
-                            .padding(.leading, 12)
-                    }
-                    .buttonStyle(.plain)
+                // 最後の1枚は共有シートを開かないと先へ進まないので、どの枚でも抜け道を残す
+                Button {
+                    onFinish(nil)
+                } label: {
+                    Text(L.s("onboarding_skip"))
+                        .font(PokkeType.labelLarge)
+                        .foregroundStyle(Palette.neutral700)
+                        .padding(.vertical, 8)
+                        .padding(.leading, 12)
                 }
+                .buttonStyle(.plain)
             }
         }
         .frame(height: 44)
@@ -85,11 +88,9 @@ struct OnboardingFlow: View {
         switch page {
         case 0:
             IntroPage(onNext: advance)
-        case 1:
+        default:
             // 別の練習ページは挟まない。動く図解を見たその場で共有シートを開く
             PinPokkePage(waiting: waitingForShare, onOpenShare: openShareSheet)
-        default:
-            DonePage(item: savedItem, onFinish: onFinish)
         }
     }
 
@@ -157,9 +158,8 @@ struct OnboardingFlow: View {
     }
 
     private func finishPractice(with item: StashItem) {
-        savedItem = item
         waitingForShare = false
-        withAnimation(.easeOut(duration: 0.25)) { page = lastPage }
+        onFinish(item)
     }
 }
 
@@ -762,64 +762,6 @@ private struct PlaceholderBar: View {
     }
 }
 
-// MARK: - 3枚目: 保存された物を見せる
-
-private struct DonePage: View {
-    let item: StashItem?
-    let onFinish: () -> Void
-
-    var body: some View {
-        OnboardingPage(primaryTitle: L.s("onboarding_finish"), onPrimary: onFinish) {
-            IconTile(
-                icon: Lucide.check,
-                tint: Palette.accent2_100,
-                foreground: Palette.accent2_700,
-                size: 64,
-                iconSize: 30
-            )
-            .padding(.top, 24)
-
-            Text(L.s("onboarding_done_title"))
-                .font(PokkeType.headline)
-                .foregroundStyle(Palette.ink)
-                .padding(.top, 18)
-
-            Text(L.s("onboarding_done_lead"))
-                .font(PokkeType.bodyMedium)
-                .lineSpacing(PokkeType.bodyLineSpacing)
-                .foregroundStyle(Palette.neutral800)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 10)
-
-            if let item {
-                Text(L.s("onboarding_done_saved_label"))
-                    .font(PokkeType.bodySmall)
-                    .foregroundStyle(Palette.neutral600)
-                    .padding(.top, 24)
-
-                // 見せるだけ。ここで詳細を開くと案内の途中で迷子になる
-                ItemRow(item: item, showExcerpt: false) {}
-                    .allowsHitTesting(false)
-                    .padding(.top, 8)
-
-                Text(L.s("onboarding_done_note"))
-                    .font(PokkeType.bodySmall)
-                    .lineSpacing(5)
-                    .foregroundStyle(Palette.neutral600)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 12)
-            }
-
-            Text(L.s("onboarding_done_settings_note"))
-                .font(PokkeType.bodySmall)
-                .lineSpacing(5)
-                .foregroundStyle(Palette.neutral600)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 12)
-        }
-    }
-}
-
 // MARK: - ページの外枠
 
 /// 全ページ共通の骨。本文はスクロールし、ボタンだけは常に下に置いておく
@@ -867,7 +809,8 @@ private struct OnboardingPage<Content: View>: View {
     }
 }
 
-private struct PageDots: View {
+/// 何枚のうちの何枚目か。初回案内とホームのスポットライトで共用する
+struct PageDots: View {
     let count: Int
     let current: Int
 

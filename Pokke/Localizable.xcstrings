@@ -5024,6 +5024,213 @@
         }
       }
     },
+    "tour_add_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can paste a URL here too, without leaving Pokke."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "他のアプリを開かなくても、ここにURLを貼り付けて保存できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 앱을 열지 않아도 여기에 URL을 붙여넣어 저장할 수 있습니다."
+          }
+        }
+      }
+    },
+    "tour_add_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save with +"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "＋からも保存できます"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "＋로도 저장할 수 있습니다"
+          }
+        }
+      }
+    },
+    "tour_filter_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read something? Move it to the archive from the link's detail view, and the unread list stays short."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読み終わったリンクは、詳細画面からアーカイブへ移せます。未読の側には、まだ読んでいない物だけが残ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다 읽은 링크는 상세 화면에서 보관함으로 옮길 수 있습니다. 안 읽음 쪽에는 아직 읽지 않은 링크만 남습니다."
+          }
+        }
+      }
+    },
+    "tour_filter_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unread and archive"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未読とアーカイブ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안 읽음과 보관함"
+          }
+        }
+      }
+    },
+    "tour_nav_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group saved links into collections, find them again with search, or reopen this guide from Settings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存したリンクはコレクションにまとめたり、検索で探したりできます。この案内は設定からいつでも見返せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장한 링크는 컬렉션으로 묶거나 검색으로 찾을 수 있습니다. 이 안내는 설정에서 언제든지 다시 볼 수 있습니다."
+          }
+        }
+      }
+    },
+    "tour_nav_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collections and search"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まとめる・探す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "모으기・찾기"
+          }
+        }
+      }
+    },
+    "tour_next": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次へ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음"
+          }
+        }
+      }
+    },
+    "tour_saved_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is the link you just saved. Tap it to open the title, the thumbnail and the whole page."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いま共有シートから保存されたリンクです。タップすると、タイトルやサムネイル、ページの中身を開けます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "방금 공유 시트에서 저장한 링크입니다. 탭하면 제목과 썸네일, 페이지 내용을 볼 수 있습니다."
+          }
+        }
+      }
+    },
+    "tour_saved_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存できました"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장했습니다"
+          }
+        }
+      }
+    },
     "view_grid": {
       "extractionState": "manual",
       "localizations": {

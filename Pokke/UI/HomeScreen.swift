@@ -36,6 +36,8 @@ struct HomeScreen: View {
     let onItemTap: (StashItem) -> Void
     let onShowGuide: () -> Void
     let onAddLink: () -> Void
+    /// スポットライトで指す1件。案内が出ていないときは nil
+    var highlightItemId: String?
 
     @ObservedObject private var prefs = AppPrefs.shared
     @State private var showArchived = false
@@ -73,7 +75,10 @@ struct HomeScreen: View {
                         viewMode: prefs.viewMode,
                         showArchived: showArchived,
                         onItemTap: onItemTap,
-                        onShowGuide: onShowGuide
+                        onShowGuide: onShowGuide,
+                        // 同じ1件が「すべて」とサービス別の両方に並ぶので、
+                        // 穴が二重に登録されないよう「すべて」の側だけで指す
+                        highlightItemId: label == nil ? highlightItemId : nil
                     )
                     .tag(label)
                 }
@@ -100,6 +105,7 @@ private struct ItemPage: View {
     let showArchived: Bool
     let onItemTap: (StashItem) -> Void
     let onShowGuide: () -> Void
+    var highlightItemId: String?
 
     var body: some View {
         let rows = buildHomeRows(items)
@@ -114,6 +120,7 @@ private struct ItemPage: View {
                             switch row {
                             case let .link(item):
                                 ItemRow(item: item, showUnreadDot: false) { onItemTap(item) }
+                                    .spotlightAnchor(.savedItem, active: item.id == highlightItemId)
                             case .ad:
                                 NativeAdCard()
                             }
@@ -145,6 +152,7 @@ private struct ItemPage: View {
                     ) {
                         ForEach(items) { item in
                             ItemGridCard(item: item) { onItemTap(item) }
+                                .spotlightAnchor(.savedItem, active: item.id == highlightItemId)
                         }
                     }
                 case .ad:
@@ -213,6 +221,7 @@ private struct HomeHeader: View {
                     accessibilityLabel: L.s("add_link_title"),
                     action: onAddLink
                 )
+                .spotlightAnchor(.addLink)
             }
 
             HStack {
@@ -236,6 +245,7 @@ private struct HomeHeader: View {
                         )
                     }
                 }
+                .spotlightAnchor(.filters)
                 Spacer(minLength: 8)
                 SegmentedPills {
                     ViewModePill(
