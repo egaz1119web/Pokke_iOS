@@ -36,6 +36,8 @@ struct HomeScreen: View {
     let onItemTap: (StashItem) -> Void
     let onShowGuide: () -> Void
     let onAddLink: () -> Void
+    /// スポットライトで指す1件。案内が出ていないときは nil
+    var highlightItemId: String?
 
     @ObservedObject private var prefs = AppPrefs.shared
     @State private var showArchived = false
@@ -66,6 +68,14 @@ struct HomeScreen: View {
             .padding(.horizontal, screenPadding)
             .padding(.top, 18)
 
+            // 上限に当たってから知るのでは遅い。手前から残りを見せておく
+            let remaining = StashRepository.maxItems - state.items.count
+            if remaining <= StashRepository.limitWarningRemaining {
+                LimitBanner(remaining: remaining)
+                    .padding(.horizontal, screenPadding)
+                    .padding(.top, 12)
+            }
+
             TabView(selection: $selectedService) {
                 ForEach(pages, id: \.self) { label in
                     ItemPage(
@@ -73,7 +83,10 @@ struct HomeScreen: View {
                         viewMode: prefs.viewMode,
                         showArchived: showArchived,
                         onItemTap: onItemTap,
-                        onShowGuide: onShowGuide
+                        onShowGuide: onShowGuide,
+                        // 同じ1件が「すべて」とサービス別の両方に並ぶので、
+                        // 穴が二重に登録されないよう「すべて」の側だけで指す
+                        highlightItemId: label == nil ? highlightItemId : nil
                     )
                     .tag(label)
                 }
@@ -100,6 +113,7 @@ private struct ItemPage: View {
     let showArchived: Bool
     let onItemTap: (StashItem) -> Void
     let onShowGuide: () -> Void
+    var highlightItemId: String?
 
     var body: some View {
         let rows = buildHomeRows(items)
@@ -114,6 +128,7 @@ private struct ItemPage: View {
                             switch row {
                             case let .link(item):
                                 ItemRow(item: item, showUnreadDot: false) { onItemTap(item) }
+                                    .spotlightAnchor(.savedItem, active: item.id == highlightItemId)
                             case .ad:
                                 NativeAdCard()
                             }
@@ -145,6 +160,7 @@ private struct ItemPage: View {
                     ) {
                         ForEach(items) { item in
                             ItemGridCard(item: item) { onItemTap(item) }
+                                .spotlightAnchor(.savedItem, active: item.id == highlightItemId)
                         }
                     }
                 case .ad:
@@ -189,6 +205,42 @@ private struct ItemPage: View {
 }
 
 /// ワードマーク・フィルタ・表示切替・サービスチップ
+/// 保存件数が上限に近いことの知らせ。
+///
+/// 上限に当たると共有からの保存が黙って失敗したように見えるので、
+/// 手前から残り件数を出しておく。満杯になったら文言を強い方へ差し替える。
+private struct LimitBanner: View {
+    let remaining: Int
+
+    private var isFull: Bool { remaining <= 0 }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            LucideIconView(
+                icon: Lucide.triangleAlert,
+                size: 16,
+                color: isFull ? Palette.accent900 : Palette.accent700
+            )
+            .padding(.top, 1)
+            Text(
+                isFull
+                    ? L.s("home_limit_reached", StashRepository.maxItems)
+                    : L.s("home_limit_near", remaining)
+            )
+            .font(PokkeType.bodySmall)
+            .foregroundStyle(isFull ? Palette.accent900 : Palette.accent800)
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: Corner.medium, style: .continuous)
+                .fill(isFull ? Palette.accent200 : Palette.accent100)
+        )
+    }
+}
+
 private struct HomeHeader: View {
     let state: StashState
     @Binding var showArchived: Bool
@@ -213,6 +265,7 @@ private struct HomeHeader: View {
                     accessibilityLabel: L.s("add_link_title"),
                     action: onAddLink
                 )
+                .spotlightAnchor(.addLink)
             }
 
             HStack {
@@ -236,6 +289,7 @@ private struct HomeHeader: View {
                         )
                     }
                 }
+                .spotlightAnchor(.filters)
                 Spacer(minLength: 8)
                 SegmentedPills {
                     ViewModePill(

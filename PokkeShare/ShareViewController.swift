@@ -18,9 +18,15 @@ final class ShareViewController: UIViewController {
         Task { @MainActor in
             let text = await extractSharedText()
             StashRepository.shared.initialize()
-            let saved = text.flatMap { StashRepository.shared.addLink($0) }
-            show(message: L.s(saved != nil ? "share_saved" : "share_no_url"))
-            try? await Task.sleep(nanoseconds: 900_000_000)
+            let result = text.map { StashRepository.shared.addLink($0) } ?? .invalidUrl
+            // 上限の知らせは「次に何をすればいいか」まで書いてあるので、短いと読み切れない
+            let (key, hold): (String, UInt64) = switch result {
+            case .saved: ("share_saved", 900_000_000)
+            case .limitReached: ("share_limit_reached", 1_800_000_000)
+            case .invalidUrl: ("share_no_url", 900_000_000)
+            }
+            show(message: L.s(key))
+            try? await Task.sleep(nanoseconds: hold)
             extensionContext?.completeRequest(returningItems: nil)
         }
     }
