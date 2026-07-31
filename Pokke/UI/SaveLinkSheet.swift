@@ -6,11 +6,13 @@ import SwiftUI
 /// URLの貼り付けは「それもできる」という位置づけで下に置いている。
 struct SaveLinkSheet: View {
     @Environment(\.dismiss) private var dismiss
-    /// 保存できたら true を返す。false ならURLとして解釈できなかった
-    let onAdd: (String) -> Bool
+    let onAdd: (String) -> AddLinkResult
+
+    /// 保存できなかった理由。URL不正と上限とで出す文言が違う
+    private enum SaveError { case invalidUrl, limitReached }
 
     @State private var url = ""
-    @State private var error = false
+    @State private var error: SaveError?
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -64,16 +66,21 @@ struct SaveLinkSheet: View {
                     .submitLabel(.done)
                     .focused($focused)
                     .onSubmit(save)
-                    .onChange(of: url) { _, _ in error = false }
+                    .onChange(of: url) { _, _ in error = nil }
             }
             .padding(.top, 8)
 
-            if error {
-                Text(L.s("add_link_invalid"))
-                    .font(PokkeType.bodySmall)
-                    .foregroundStyle(Palette.danger)
-                    .padding(.horizontal, 2)
-                    .padding(.top, 8)
+            if let error {
+                Text(
+                    error == .limitReached
+                        ? L.s("add_link_limit_reached", StashRepository.maxItems)
+                        : L.s("add_link_invalid")
+                )
+                .font(PokkeType.bodySmall)
+                .foregroundStyle(Palette.danger)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 2)
+                .padding(.top, 8)
             }
 
             PrimaryButton(title: L.s("save_link_submit"), height: 50, action: save)
@@ -90,6 +97,10 @@ struct SaveLinkSheet: View {
     }
 
     private func save() {
-        if onAdd(url) { dismiss() } else { error = true }
+        switch onAdd(url) {
+        case .saved: dismiss()
+        case .limitReached: error = .limitReached
+        case .invalidUrl: error = .invalidUrl
+        }
     }
 }

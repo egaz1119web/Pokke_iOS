@@ -78,6 +78,9 @@ struct SearchScreen: View {
                             }
                         }
                         .clipped()
+                        // clipped() は絵しか切らない。畳んで見えていないチップを
+                        // 押せてしまわないよう、当たり判定も枠の中に閉じる
+                        .contentShape(Rectangle())
 
                         if showsTagToggle {
                             TagToggleChip(expanded: tagsExpanded) {
@@ -190,30 +193,36 @@ struct FlowLayout: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.replacingUnspecifiedDimensions().width
         let rows = arrange(subviews: subviews, in: width)
-        report(rows.count)
+        // 幅を決めずに「だいたいの大きさ」を聞かれることがある。そのときの既定幅は10ptで、
+        // 数えると1チップ1行になってしまう。実寸を聞かれたときだけ行数を報告する
+        if let proposed = proposal.width, proposed.isFinite, proposed > 0 {
+            report(rows.count)
+        }
         let visible = visibleRows(rows)
         let height = visible.map(\.height).reduce(0, +) + spacing * CGFloat(max(0, visible.count - 1))
         return CGSize(width: width, height: height)
     }
 
+    /// 隠す行も「本来の位置」に置く。
+    ///
+    /// 以前は上限を超えた行を遥か上（-10_000）へ逃がしていたが、`maxRows` が外れると
+    /// その1万ptぶんが移動アニメーションになり、行が戻ってくるのが変化の終わり際になる。
+    /// 開いている0.2秒のあいだ、伸びた高さの中身が空っぽの帯として見えてしまっていた。
+    ///
+    /// 本来の位置に置いてあれば、伸縮する枠が上から順に中身を出し入れするだけで済む。
+    /// はみ出したぶんは呼び出し側の `clipped()` が隠す。ただし `clipped()` は
+    /// タップまでは切らないので、併せて `contentShape()` で当たり判定も枠に閉じること。
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let rows = arrange(subviews: subviews, in: bounds.width)
-        let shown = visibleRows(rows).count
         var y = bounds.minY
-        for (rowIndex, row) in rows.enumerated() {
+        for row in rows {
             var x = bounds.minX
             for index in row.indices {
                 let size = subviews[index].sizeThatFits(.unspecified)
-                // 上限を超えた行は画面の遥か上へ逃がす。返した高さの中に置くと
-                // clipped() をすり抜けたタップを拾ってしまうことがあるため、
-                // スクロール領域の外まで離す
-                let position = rowIndex < shown
-                    ? CGPoint(x: x, y: y)
-                    : CGPoint(x: bounds.minX, y: bounds.minY - 10_000)
-                subviews[index].place(at: position, proposal: ProposedViewSize(size))
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
-            if rowIndex < shown { y += row.height + spacing }
+            y += row.height + spacing
         }
     }
 

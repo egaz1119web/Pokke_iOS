@@ -47,6 +47,29 @@
           }
         }
       }
+    },
+    "share_limit_reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokke is full. Delete a few links and try again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存がいっぱいです。いくつか削除してからもう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장 공간이 가득 찼습니다. 몇 개를 지운 뒤 다시 시도해 주세요."
+          }
+        }
+      }
     }
   }
 }

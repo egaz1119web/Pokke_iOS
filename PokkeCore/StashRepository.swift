@@ -1,12 +1,38 @@
 import Combine
 import Foundation
 
+/// `StashRepository.addLink(_:)` の結果
+enum AddLinkResult {
+    /// 保存できた。同じURLが既にあった場合は、増やさずにその1件を返す
+    case saved(StashItem)
+    /// URLとして読めなかった
+    case invalidUrl
+    /// 保存件数が上限に達している
+    case limitReached
+
+    var savedItem: StashItem? {
+        if case let .saved(item) = self { return item }
+        return nil
+    }
+}
+
 /// アプリ全データの保管庫。App Groupコンテナの stash.json にJSONで永続化する。
 /// デモ規模なので全件メモリ保持＋都度書き出しのシンプル構成。
 @MainActor
 final class StashRepository: ObservableObject {
 
     static let shared = StashRepository()
+
+    /// 保存できるリンクの上限。
+    ///
+    /// 実質の制限はクラウド同期のドキュメントサイズ（FirestoreSyncの900KB）で、
+    /// 1件あたりJSONで最悪2.5KBほどになる（og:descriptionが600文字上限のため）。
+    /// 300件なら最悪ケースでも枠に収まる。アーカイブしてもファイルは軽くならないので、
+    /// 数えるのはアーカイブ済みも含めた全件。
+    static let maxItems = 300
+
+    /// 残りがこの件数を切ったら、上限が近いことをホームで知らせる
+    static let limitWarningRemaining = 20
 
     @Published private(set) var state = StashState()
 
@@ -47,10 +73,11 @@ final class StashRepository: ObservableObject {
 
     /// URLを保存。タイトル等はまず仮置きし、バックグラウンドでOGPを取得して差し替える
     @discardableResult
-    func addLink(_ url: String) -> StashItem? {
-        guard let normalized = Self.normalizeUrl(url) else { return nil }
-        // 同一URLは重複保存しない
-        if let existing = state.items.first(where: { $0.url == normalized }) { return existing }
+    func addLink(_ url: String) -> AddLinkResult {
+        guard let normalized = Self.normalizeUrl(url) else { return .invalidUrl }
+        // 同一URLは重複保存しない。件数が増えないので上限判定より先に見る
+        if let existing = state.items.first(where: { $0.url == normalized }) { return .saved(existing) }
+        guard state.items.count < Self.maxItems else { return .limitReached }
 
         let item = StashItem(
             id: UUID().uuidString,
@@ -63,8 +90,11 @@ final class StashRepository: ObservableObject {
             $0.events.append(UsageEvent(type: UsageEvent.save, time: item.savedAt))
         }
         Task { await fetchMetadata(for: item.id, url: normalized) }
-        return item
+        return .saved(item)
     }
+
+    /// 上限まであと何件か。0なら満杯
+    var remainingSlots: Int { max(0, Self.maxItems - state.items.count) }
 
     /// サムネイル・本文がまだ空のアイテムを取得し直す。
     ///
