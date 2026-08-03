@@ -26,6 +26,12 @@ struct StashItem: Identifiable, Equatable, Hashable {
     var archived: Bool = false
     var openCount: Int = 0
     var lastOpenedAt: EpochMillis?
+    /// リマインダーの通知時刻。設定していなければ nil。
+    ///
+    /// **iOS固有のフィールド**（Android版にはまだ無い）。JSONには載せるので同期でも
+    /// 運ばれるが、Android側は知らないキーなので、Androidがそのアイテムを書き直すと
+    /// 落ちる。iOS同士では保たれる、くらいの温度で扱う。
+    var remindAt: EpochMillis?
     /// 端末間マージの勝敗判定に使う最終更新時刻。既存データは savedAt を初期値とする
     var updatedAt: EpochMillis
 
@@ -42,6 +48,7 @@ struct StashItem: Identifiable, Equatable, Hashable {
         archived: Bool = false,
         openCount: Int = 0,
         lastOpenedAt: EpochMillis? = nil,
+        remindAt: EpochMillis? = nil,
         updatedAt: EpochMillis? = nil
     ) {
         self.id = id
@@ -56,6 +63,7 @@ struct StashItem: Identifiable, Equatable, Hashable {
         self.archived = archived
         self.openCount = openCount
         self.lastOpenedAt = lastOpenedAt
+        self.remindAt = remindAt
         self.updatedAt = updatedAt ?? savedAt
     }
 

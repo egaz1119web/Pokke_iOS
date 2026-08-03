@@ -124,6 +124,21 @@ struct TagSuggestions {
     let tags: [String]
 }
 
+/// リマインダー提案の構造化出力。
+///
+/// 「何月何日の何時」を直接答えさせると、モデルが今日の日付を取り違えたときに
+/// 過去の日時が返ってきて黙って使えなくなる。「今から何時間後」なら必ず未来になり、
+/// 幅の丸め（`ReminderPlan.resolve`）もこちら側で機械的にできる。
+@available(iOS 26.0, *)
+@Generable
+struct ReminderSuggestion {
+    @Guide(description: "How many hours from now to remind the user about this link. Between 1 and 2160.")
+    let hoursFromNow: Int
+
+    @Guide(description: "A very short reason, at most 12 words, in the same language as the instruction.")
+    let reason: String
+}
+
 /// 1回のシート表示ぶんの推論エンジン。
 ///
 /// エンジンの確保はそれなりに重いので、シートを開いている間は使い回し、
@@ -169,6 +184,18 @@ final class AiSession {
             return response.content.tags
         } catch {
             log("タグの提案に失敗した", error)
+            throw AiError(failure: .generationFailed)
+        }
+    }
+
+    /// リマインダーの時刻候補を構造化出力で受け取る
+    func suggestReminder(prompt: String) async throws -> ReminderSuggestion {
+        let options = GenerationOptions(temperature: 0.3)
+        do {
+            let response = try await engine().respond(to: prompt, generating: ReminderSuggestion.self, options: options)
+            return response.content
+        } catch {
+            log("リマインダーの提案に失敗した", error)
             throw AiError(failure: .generationFailed)
         }
     }

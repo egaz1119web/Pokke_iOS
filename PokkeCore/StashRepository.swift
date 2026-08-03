@@ -166,6 +166,30 @@ final class StashRepository: ObservableObject {
         }
     }
 
+    /// まとめて削除する。1件ずつ `deleteItem` を呼ぶとその都度ファイルへ書き出すことになるので、
+    /// 整理画面のような一括操作では書き込みを1回にまとめる
+    func deleteItems(ids: [String]) {
+        guard !ids.isEmpty else { return }
+        let now = nowMillis()
+        let targets = Set(ids)
+        mutate { s in
+            s.items.removeAll { targets.contains($0.id) }
+            for id in targets { s.deletedIds[id] = now }
+        }
+    }
+
+    /// リマインダーの設定・解除。`at` が nil なら解除。
+    ///
+    /// 通知そのものの登録は端末ローカルの話なので、ここでは時刻を持つだけ。
+    /// 実際の予約は `ReminderScheduler` が保存内容の変化を見て追従する
+    func setReminder(id: String, at: EpochMillis?) {
+        mutate { s in
+            guard let index = s.items.firstIndex(where: { $0.id == id }) else { return }
+            s.items[index].remindAt = at
+            s.items[index].updatedAt = nowMillis()
+        }
+    }
+
     func setArchived(id: String, archived: Bool) {
         mutate { s in
             guard let index = s.items.firstIndex(where: { $0.id == id }) else { return }

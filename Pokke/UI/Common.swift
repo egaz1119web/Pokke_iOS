@@ -15,6 +15,12 @@ func relativeTime(_ millis: EpochMillis) -> String {
     }
 }
 
+/// 「8月10日 9:00」のような、リマインダーの日時表示。
+/// 相対時刻（`relativeTime`）と違い、何日の何時に鳴るかは正確に見せる必要がある
+func reminderTimeText(_ millis: EpochMillis) -> String {
+    Date(epochMillis: millis).formatted(date: .abbreviated, time: .shortened)
+}
+
 /// リンクを開く＋再訪カウント。
 ///
 /// 常に端末の既定のブラウザ（またはそのURLを持つアプリ）へ渡す。
@@ -186,6 +192,12 @@ private struct ItemMetaRow: View {
                 .lineLimit(1)
                 .fixedSize()
             Spacer(minLength: 0)
+            // リマインダーを付けたことが一覧からも分かるようにする。
+            // 鳴った後のものは予定ではないので出さない
+            if ReminderPlan.isPending(item.remindAt, now: nowMillis()) {
+                LucideIconView(icon: Lucide.bell, size: 12, color: Palette.accent600)
+                    .accessibilityLabel(L.s("detail_reminder"))
+            }
             if showUnreadDot && item.unread { UnreadDot() }
         }
     }

@@ -36,6 +36,7 @@ struct HomeScreen: View {
     let onItemTap: (StashItem) -> Void
     let onShowGuide: () -> Void
     let onAddLink: () -> Void
+    let onCleanup: () -> Void
     /// スポットライトで指す1件。案内が出ていないときは nil
     var highlightItemId: String?
 
@@ -48,6 +49,19 @@ struct HomeScreen: View {
         state.items
             .filter { $0.archived == showArchived }
             .sorted { $0.savedAt > $1.savedAt }
+    }
+
+    /// 整理の対象になる件数（アーカイブ済みも含む全体で数える）
+    private var staleCount: Int {
+        OldItems.stale(items: state.items, now: nowMillis()).count
+    }
+
+    private var showsCleanupNotice: Bool {
+        OldItems.showsNotice(
+            staleCount: staleCount,
+            snoozedAt: prefs.cleanupSnoozedAt,
+            now: nowMillis()
+        )
     }
 
     var body: some View {
@@ -74,6 +88,16 @@ struct HomeScreen: View {
                 LimitBanner(remaining: remaining)
                     .padding(.horizontal, screenPadding)
                     .padding(.top, 12)
+            }
+
+            // 寝かせたままのリンクがたまってきたら整理をすすめる。
+            // 上限の知らせと同時に出ると押し付けがましいので、そちらを優先する
+            if remaining > StashRepository.limitWarningRemaining, showsCleanupNotice {
+                CleanupBanner(count: staleCount, onOpen: onCleanup) {
+                    prefs.snoozeCleanupNotice()
+                }
+                .padding(.horizontal, screenPadding)
+                .padding(.top, 12)
             }
 
             TabView(selection: $selectedService) {

@@ -1,5 +1,6 @@
 import FirebaseCore
 import SwiftUI
+import UserNotifications
 
 @main
 struct PokkeApp: App {
@@ -12,6 +13,9 @@ struct PokkeApp: App {
         }
         StashRepository.shared.initialize()
         AuthService.shared.restoreSession()
+        // 通知の受け取り口は起動が終わる前に差しておく必要がある。
+        // 遅れると、通知から起動したときの1回目を取りこぼす
+        UNUserNotificationCenter.current().delegate = NotificationRouter.shared
     }
 
     var body: some Scene {

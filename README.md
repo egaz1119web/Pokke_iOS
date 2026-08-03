@@ -14,7 +14,7 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 | `Pokke/` | SwiftUIの画面、デザインシステム、Firebase、AdMob、アプリのエントリポイント | Pokke |
 | `Pokke/Fonts/` | 同梱フォント（Info.plist の `UIAppFonts` に対応） | Pokke |
 | `PokkeShare/` | 共有シート拡張（Androidの `ShareReceiverActivity` 相当） | PokkeShare |
-| `PokkeTests/` | ユニットテスト（Androidの `app/src/test` から移植、77件） | PokkeTests |
+| `PokkeTests/` | ユニットテスト（Androidの `app/src/test` からの移植＋iOS固有のぶん、135件） | PokkeTests |
 
 - Bundle ID: `com.egaz.stash`（Androidの applicationId と同じ）／拡張は `com.egaz.stash.Share`
 - App Group: `group.com.egaz.stash` — 共有拡張とアプリ本体が `stash.json` を共有するのに必要
@@ -39,9 +39,13 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 | `res/values/strings.xml` + `values-ja` + `values-ko` | `Localizable.xcstrings`（キー名はAndroidと同一） |
 | `ShareReceiverActivity` | `PokkeShare`（Share Extension） |
 
-**JSONスキーマはAndroidと完全に同一**（キー名・エポックミリ秒）。同じGoogleアカウントで
+**JSONスキーマはAndroidと同一**（キー名・エポックミリ秒）。同じGoogleアカウントで
 ログインすればAndroid端末とiPhoneの間でそのまま同期される。`PokkeTests` に
 「Android版が書いたJSONを読める」ことの回帰テストを入れてある。
+
+唯一の例外が `items[].remindAt`（リマインダーの通知時刻）で、これはiOSで足したキー。
+Android版は知らないので読み飛ばすが、**Android側でそのアイテムを更新すると値が落ちる**
+（iOS同士なら同期で運ばれる）。Android版にリマインダーを入れるときは同じキー名を使うこと。
 
 ### iOSで変えたところ
 
@@ -81,6 +85,24 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
   「メイン画像/動画にMediaViewを使っていない」を実装エラーとして出すため。
   Androidのレイアウトには無い要素なので、そこだけ縦に1枚多い
 - **配色はライト固定**: Android版が `lightColorScheme` 固定なので、`preferredColorScheme(.light)` で揃えた
+- **古いリンクをまとめて整理できる**: 保存から1週間以上たったものだけを集めたシート
+  （[`CleanupSheet.swift`](Pokke/UI/CleanupSheet.swift)）。**既定は全部にチェックが入っていて**、
+  残したいものだけ外して消す向きにしてある — 1件ずつ選ばせると、整理したい人ほど手数が増えるため。
+  対象にはアーカイブ済みも入れる（保存件数の上限はアーカイブしても減らないので、
+  外すと「整理したのに空きが増えない」ことになる）。抽出は
+  [`PokkeCore/OldItems.swift`](PokkeCore/OldItems.swift) の純関数。
+  入口はホームのバナー（たまってきた時だけ・閉じると1週間出ない）と設定画面の「データ」
+- **リンクごとにリマインダーを置ける**: 詳細画面から通知時刻を決める
+  （[`ReminderSection.swift`](Pokke/UI/ReminderSection.swift)）。候補は「3時間後／明日の朝／週末／
+  1週間後」と日時指定で、いずれも**必ず未来になる**値しか作らない
+  （[`PokkeCore/ReminderPlan.swift`](PokkeCore/ReminderPlan.swift)）。
+  端末内AIが使える端末では時刻の提案も出せる。モデルには日時ではなく
+  **「今から何時間後か」**を答えさせている — 日付を直接言わせると、モデルが今日を
+  取り違えたときに過去の時刻が返ってきて黙って使えなくなるため。返ってきた値は
+  幅（1時間〜90日）に丸め、22時〜翌8時に当たったぶんは朝へ寄せてから見せる。
+  OSへの予約（`ReminderScheduler`）は保存内容の**写し**で、個々の操作からではなく
+  保存内容ぜんぶを渡した差分で取り直す — そうしないと、クラウド同期で別端末から
+  入ってきた変更やまとめて削除したぶんを取りこぼす
 
 ### アイコンとフォント
 
