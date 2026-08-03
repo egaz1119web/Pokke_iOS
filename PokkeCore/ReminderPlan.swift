@@ -5,7 +5,7 @@ import Foundation
 /// 通知そのもの（UserNotifications）はアプリ側の `ReminderScheduler` が担当し、
 /// ここは時刻の計算だけを持つ純粋なロジック。カレンダーを引数で受け取るので、
 /// タイムゾーン固定のユニットテストで挙動を固定できる。
-/// iOS固有の機能で、Android版には対応するファイルが無い。
+/// Android版の `data/ReminderPlan.kt` と同じ内容。
 enum ReminderPlan {
 
     /// ワンタップで選べる候補。

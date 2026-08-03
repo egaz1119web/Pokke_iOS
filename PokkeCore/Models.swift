@@ -28,15 +28,12 @@ struct StashItem: Identifiable, Equatable, Hashable {
     ///
     /// アーカイブ（読み終えて片付けた）とは別の軸で、どちらの状態でも立てられる。
     /// 立っているものは古いリンクの一括整理（`OldItems`）の対象から外れる。
-    /// **iOS固有のフィールド**（`remindAt` と同じ扱い。下の注記を参照）
     var favorite: Bool = false
     var openCount: Int = 0
     var lastOpenedAt: EpochMillis?
     /// リマインダーの通知時刻。設定していなければ nil。
     ///
-    /// **iOS固有のフィールド**（Android版にはまだ無い）。JSONには載せるので同期でも
-    /// 運ばれるが、Android側は知らないキーなので、Androidがそのアイテムを書き直すと
-    /// 落ちる。iOS同士では保たれる、くらいの温度で扱う。
+    /// 予約そのもの（`ReminderScheduler`）は端末ごとの話なので、ここには時刻だけ置く
     var remindAt: EpochMillis?
     /// 端末間マージの勝敗判定に使う最終更新時刻。既存データは savedAt を初期値とする
     var updatedAt: EpochMillis

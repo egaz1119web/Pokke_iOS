@@ -43,10 +43,9 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 ログインすればAndroid端末とiPhoneの間でそのまま同期される。`PokkeTests` に
 「Android版が書いたJSONを読める」ことの回帰テストを入れてある。
 
-例外は `items[].remindAt`（リマインダーの通知時刻）と `items[].favorite`（お気に入り）の
-2つで、どちらもiOSで足したキー。Android版は知らないので読み飛ばすが、
-**Android側でそのアイテムを更新すると値が落ちる**（iOS同士なら同期で運ばれる）。
-Android版に同じ機能を入れるときは同じキー名を使うこと。
+`items[].remindAt`（リマインダーの通知時刻）と `items[].favorite`（お気に入り）は
+iOSで先に足したキーだが、**Android版も同じキー名で読み書きするようになった**ので
+端末をまたいでも落ちない。
 
 ### iOSで変えたところ
 

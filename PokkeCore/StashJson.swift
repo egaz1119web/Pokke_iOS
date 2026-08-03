@@ -77,11 +77,9 @@ enum StashJson {
             "tags": item.tags,
             "savedAt": item.savedAt,
             "archived": item.archived,
-            // remindAt と同じくiOS固有のキー
             "favorite": item.favorite,
             "openCount": item.openCount,
             "lastOpenedAt": item.lastOpenedAt ?? NSNull(),
-            // iOS固有。Androidは読み書きしないので、Android側で更新されると落ちる
             "remindAt": item.remindAt ?? NSNull(),
             "updatedAt": item.updatedAt,
         ]

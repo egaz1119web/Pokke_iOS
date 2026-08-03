@@ -207,7 +207,7 @@ enum Lucide {
 
     static let clock = icon("Clock", "M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0", "M12 6v6l4 2")
 
-    /// リマインダー。Android版にはまだ無い（iOS固有の機能なので）
+    /// リマインダー
     static let bell = icon(
         "Bell",
         "M10.268 21a2 2 0 0 0 3.464 0",
