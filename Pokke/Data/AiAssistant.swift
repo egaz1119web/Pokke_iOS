@@ -45,8 +45,12 @@ enum AiProgress {
 /// 有効にしていない実機やシミュレータで確認）。押しても必ず失敗する入口を
 /// 出さないために、申告が通ったあと**短い生成を1回試して**から使えると判断する。
 ///
-/// 判定はアプリの起動ごとに1回だけ。結果が出るまでは入口を出さない
-/// （出してから消えるより、少し遅れて現れる方が混乱が小さい）。
+/// 使えると分かるまでは入口を出さない（出してから消えるより、少し遅れて現れる方が
+/// 混乱が小さい）。**使えなかった結果は覚え込まない** — 設定でApple Intelligenceを
+/// 有効にした直後や、モデルの用意が終わる前に一度試したときに、
+/// アプリを再起動するまでAIが消えたままになってしまうため。
+/// 端末やOSの都合で待っても変わらないもの（`deviceNotEligible` /
+/// `unsupportedOSVersion`）だけは、一度で打ち切って聞き直さない。
 @MainActor
 final class AiAssistant: ObservableObject {
 
@@ -55,30 +59,59 @@ final class AiAssistant: ObservableObject {
     /// 試し撃ちが済むまでは「準備中」＝入口を出さない
     @Published private(set) var availability: AiAvailability = .modelNotReady
 
+    /// 使えなかったときに、次に確かめ直すまで空ける間隔。
+    /// 画面を行き来するたびに試し撃ちが走らないよう、少しだけ置く
+    private static let retryInterval: TimeInterval = 10
+
     private var probing = false
-    private var probed = false
+    /// 待っても変わらない理由で確定した
+    private var settled = false
+    private var lastProbeAt: Date?
 
     private init() {}
 
-    /// 起動後に一度だけ確かめる。画面が出るたびに呼んでも二重には走らない
+    /// 使えるかを確かめる。すでに使えると分かっているとき・確かめた直後・
+    /// 待っても変わらないと分かったときは何もしない
     func probeIfNeeded() async {
-        guard !probed, !probing else { return }
+        guard !probing, !settled, availability != .available else { return }
+        if let lastProbeAt, Date().timeIntervalSince(lastProbeAt) < Self.retryInterval { return }
+        await probe()
+    }
+
+    /// 間隔を置かずに確かめ直す。設定アプリでApple Intelligenceを入れて戻ってきた
+    /// 直後のように、状況が変わっていそうなときに呼ぶ
+    func recheck() async {
+        guard !probing, !settled, availability != .available else { return }
+        await probe()
+    }
+
+    private func probe() async {
         probing = true
+        lastProbeAt = Date()
         defer { probing = false }
 
-        let declared = Self.declaredAvailability()
-        guard declared == .available else {
-            availability = declared
-            probed = true
-            return
-        }
-        guard #available(iOS 26.0, *) else {
+        switch Self.declaredAvailability() {
+        case .deviceNotEligible:
+            // この端末がApple Intelligenceに対応していない。待っても変わらない
+            availability = .deviceNotEligible
+            settled = true
+        case .unsupportedOSVersion:
             availability = .unsupportedOSVersion
-            probed = true
-            return
+            settled = true
+        case .appleIntelligenceNotEnabled:
+            // 設定で有効にすれば使える。次の機会にまた確かめる
+            availability = .appleIntelligenceNotEnabled
+        case .modelNotReady:
+            availability = .modelNotReady
+        case .available:
+            guard #available(iOS 26.0, *) else {
+                availability = .unsupportedOSVersion
+                settled = true
+                return
+            }
+            availability = await Self.canActuallyGenerate() ? .available : .modelNotReady
         }
-        availability = await Self.canActuallyGenerate() ? .available : .modelNotReady
-        probed = true
+        log("端末内AIの判定: \(availability)")
     }
 
     /// OS・端末が申告する可否
@@ -181,6 +214,10 @@ final class AiSession {
 /// 端末内AIのつまずきを追うためのログ。
 /// `xcrun simctl spawn booted log stream --predicate 'eventMessage CONTAINS "PokkeAi"'`
 /// または Console.app で "PokkeAi" を絞り込む（Android版の `adb logcat -s PokkeAi` 相当）
+func log(_ message: String) {
+    print("[PokkeAi] \(message)")
+}
+
 func log(_ message: String, _ error: Error) {
     print("[PokkeAi] \(message): \(error)")
 }

@@ -30,24 +30,64 @@ private func buildHomeRows(_ items: [StashItem]) -> [HomeRow] {
     return rows
 }
 
-/// ホーム: 未読/アーカイブ一覧
+/// ホーム上部の絞り込み。
+///
+/// お気に入りはアーカイブとは別の軸なので、片付けたぶんも含めて全部並べる
+/// （「残したい」と「読み終えた」は両立する）。
+private enum HomeFilter: CaseIterable {
+    case inbox, favorite, archived
+
+    func matches(_ item: StashItem) -> Bool {
+        switch self {
+        case .inbox: return !item.archived
+        case .favorite: return item.favorite
+        case .archived: return item.archived
+        }
+    }
+
+    /// ピルに出す件数。「未読」だけは並ぶ件数（未アーカイブ全部）ではなく、
+    /// まだ開いていない数を出す — 知りたいのは残りの量なので
+    func count(in items: [StashItem]) -> Int {
+        switch self {
+        case .inbox: return items.filter(\.unread).count
+        case .favorite: return items.filter(\.favorite).count
+        case .archived: return items.filter(\.archived).count
+        }
+    }
+}
+
+/// ホーム: 未読/お気に入り/アーカイブ一覧
 struct HomeScreen: View {
     let state: StashState
     let onItemTap: (StashItem) -> Void
     let onShowGuide: () -> Void
     let onAddLink: () -> Void
+    let onCleanup: () -> Void
     /// スポットライトで指す1件。案内が出ていないときは nil
     var highlightItemId: String?
 
     @ObservedObject private var prefs = AppPrefs.shared
-    @State private var showArchived = false
+    @State private var filter: HomeFilter = .inbox
     /// 選択中サービスのラベル。nil は「すべて」。スワイプでもチップでも同じ状態を見る
     @State private var selectedService: String?
 
     private var visibleItems: [StashItem] {
         state.items
-            .filter { $0.archived == showArchived }
+            .filter(filter.matches)
             .sorted { $0.savedAt > $1.savedAt }
+    }
+
+    /// 整理の対象になる件数（アーカイブ済みも含む全体で数える）
+    private var staleCount: Int {
+        OldItems.stale(items: state.items, now: nowMillis()).count
+    }
+
+    private var showsCleanupNotice: Bool {
+        OldItems.showsNotice(
+            staleCount: staleCount,
+            snoozedAt: prefs.cleanupSnoozedAt,
+            now: nowMillis()
+        )
     }
 
     var body: some View {
@@ -60,7 +100,7 @@ struct HomeScreen: View {
             // 今どこにいるのかが分からなくなる
             HomeHeader(
                 state: state,
-                showArchived: $showArchived,
+                filter: $filter,
                 groups: groups,
                 selectedService: $selectedService,
                 onAddLink: onAddLink
@@ -68,12 +108,25 @@ struct HomeScreen: View {
             .padding(.horizontal, screenPadding)
             .padding(.top, 18)
 
+            // 知らせは一覧の外に置くので、下にも余白を持たせる。
+            // ヘッダーの下余白（12pt）は知らせの上に付くだけなので、これが無いと
+            // 知らせが1件目のカードにくっついて、同じ塊のように見えてしまう
+            let noticePadding = EdgeInsets(top: 12, leading: screenPadding, bottom: 12, trailing: screenPadding)
+
             // 上限に当たってから知るのでは遅い。手前から残りを見せておく
             let remaining = StashRepository.maxItems - state.items.count
             if remaining <= StashRepository.limitWarningRemaining {
                 LimitBanner(remaining: remaining)
-                    .padding(.horizontal, screenPadding)
-                    .padding(.top, 12)
+                    .padding(noticePadding)
+            }
+
+            // 寝かせたままのリンクがたまってきたら整理をすすめる。
+            // 上限の知らせと同時に出ると押し付けがましいので、そちらを優先する
+            if remaining > StashRepository.limitWarningRemaining, showsCleanupNotice {
+                CleanupBanner(count: staleCount, onOpen: onCleanup) {
+                    prefs.snoozeCleanupNotice()
+                }
+                .padding(noticePadding)
             }
 
             TabView(selection: $selectedService) {
@@ -81,7 +134,7 @@ struct HomeScreen: View {
                     ItemPage(
                         items: items(for: label, groups: groups),
                         viewMode: prefs.viewMode,
-                        showArchived: showArchived,
+                        filter: filter,
                         onItemTap: onItemTap,
                         onShowGuide: onShowGuide,
                         // 同じ1件が「すべて」とサービス別の両方に並ぶので、
@@ -97,7 +150,7 @@ struct HomeScreen: View {
         .onChange(of: pages) { _, current in
             if let selected = selectedService, !current.contains(selected) { selectedService = nil }
         }
-        .onChange(of: showArchived) { _, _ in selectedService = nil }
+        .onChange(of: filter) { _, _ in selectedService = nil }
     }
 
     private func items(for label: String?, groups: [DomainGroup]) -> [StashItem] {
@@ -110,7 +163,7 @@ struct HomeScreen: View {
 private struct ItemPage: View {
     let items: [StashItem]
     let viewMode: ViewMode
-    let showArchived: Bool
+    let filter: HomeFilter
     let onItemTap: (StashItem) -> Void
     let onShowGuide: () -> Void
     var highlightItemId: String?
@@ -196,10 +249,13 @@ private struct ItemPage: View {
 
     @ViewBuilder
     private var empty: some View {
-        if showArchived {
-            EmptyState(icon: Lucide.archive, message: L.s("home_empty_archived"))
-        } else {
+        switch filter {
+        case .inbox:
             ShareHintCard(onShowGuide: onShowGuide)
+        case .favorite:
+            EmptyState(icon: Lucide.star, message: L.s("home_empty_favorites"))
+        case .archived:
+            EmptyState(icon: Lucide.archive, message: L.s("home_empty_archived"))
         }
     }
 }
@@ -243,7 +299,7 @@ private struct LimitBanner: View {
 
 private struct HomeHeader: View {
     let state: StashState
-    @Binding var showArchived: Bool
+    @Binding var filter: HomeFilter
     let groups: [DomainGroup]
     @Binding var selectedService: String?
     let onAddLink: () -> Void
@@ -270,22 +326,39 @@ private struct HomeHeader: View {
 
             HStack {
                 SegmentedPills {
-                    SegmentPill(selected: !showArchived) {
-                        showArchived = false
+                    SegmentPill(selected: filter == .inbox) {
+                        filter = .inbox
                     } content: {
                         SegmentLabel(
                             text: L.s("filter_unread"),
-                            count: state.items.filter(\.unread).count,
-                            selected: !showArchived
+                            count: HomeFilter.inbox.count(in: state.items),
+                            selected: filter == .inbox
                         )
                     }
-                    SegmentPill(selected: showArchived) {
-                        showArchived = true
+                    // お気に入りだけ星印にしてある。3つとも文字にすると、
+                    // 隣の表示切替と合わせて小さい端末で横に収まらない
+                    SegmentPill(selected: filter == .favorite, horizontalPadding: 11) {
+                        filter = .favorite
+                    } content: {
+                        LucideIconView(
+                            icon: Lucide.star,
+                            size: 15,
+                            color: filter == .favorite ? Palette.accent700 : Palette.neutral700
+                        )
+                        Text("\(HomeFilter.favorite.count(in: state.items))")
+                            .font(PokkeType.bodySmall)
+                            .foregroundStyle(
+                                (filter == .favorite ? Palette.ink : Palette.neutral700).opacity(0.65)
+                            )
+                    }
+                    .accessibilityLabel(L.s("filter_favorite"))
+                    SegmentPill(selected: filter == .archived) {
+                        filter = .archived
                     } content: {
                         SegmentLabel(
                             text: L.s("filter_archived"),
-                            count: state.items.filter(\.archived).count,
-                            selected: showArchived
+                            count: HomeFilter.archived.count(in: state.items),
+                            selected: filter == .archived
                         )
                     }
                 }

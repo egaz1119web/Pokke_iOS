@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsScreen: View {
     let onShowGuide: () -> Void
+    let onCleanup: () -> Void
 
     @ObservedObject private var auth = AuthService.shared
     @ObservedObject private var consent = AdsConsent.shared
@@ -49,6 +50,12 @@ struct SettingsScreen: View {
                 SectionLabel(text: L.s("settings_data"))
                     .padding(.top, 18)
                     .padding(.bottom, 8)
+                // 整理はホームのバナーからも入れるが、閉じた後・件数が少ないうちは
+                // 出ないので、いつでも辿れる場所をここに用意しておく
+                PokkeCard(padding: 0) {
+                    SettingsLinkRow(icon: Lucide.clock, text: L.s("settings_cleanup"), action: onCleanup)
+                }
+                .padding(.bottom, 10)
                 deleteCard
 
                 if !auth.isConfigured {
