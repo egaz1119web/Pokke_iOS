@@ -139,6 +139,12 @@ struct DetailSheet: View {
                 }
             }
             Spacer(minLength: 0)
+            // 下の4等分ボタンには入れない。あれは一度きりの操作（開く・共有・削除）が
+            // 並ぶ列で、出し入れを繰り返す印は見出しの横にある方が押しやすい
+            FavoriteToggle(favorite: item.favorite) {
+                StashRepository.shared.setFavorite(id: item.id, favorite: !item.favorite)
+                toast.show(L.s(item.favorite ? "toast_unfavorited" : "toast_favorited"))
+            }
         }
     }
 
@@ -343,6 +349,33 @@ struct DetailSheet: View {
             suggestTagsFailed = suggestions.isEmpty
             suggestingTags = false
         }
+    }
+}
+
+/// お気に入りの出し入れ。入っている間は淡いテラコッタ地＋濃い星にする。
+///
+/// 塗り分けたアイコンは持っていない（Lucideは線画のみ）ので、
+/// 印が付いていることは面の色と星の濃さで見せる。
+private struct FavoriteToggle: View {
+    let favorite: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle().fill(favorite ? Palette.accent100 : Palette.surface)
+                Circle().stroke(favorite ? Palette.accent : Palette.hairline, lineWidth: 1.5)
+                LucideIconView(
+                    icon: Lucide.star,
+                    size: 19,
+                    color: favorite ? Palette.accent700 : Palette.neutral600
+                )
+            }
+            .frame(width: 40, height: 40)
+        }
+        .buttonStyle(.pressScale(0.92))
+        .accessibilityLabel(L.s(favorite ? "detail_unfavorite" : "detail_favorite"))
+        .accessibilityAddTraits(favorite ? [.isSelected] : [])
     }
 }
 

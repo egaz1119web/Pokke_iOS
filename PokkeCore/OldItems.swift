@@ -23,13 +23,17 @@ enum OldItems {
     /// アーカイブ済みも含める。保存件数の上限（`StashRepository.maxItems`）は
     /// アーカイブしても減らないので、そこを対象から外すと
     /// 「整理したのに空きが増えない」ことになってしまう。
+    ///
+    /// **お気に入りだけは外す**。ずっと残しておきたいという意思表示なので、
+    /// 全選択から毎回チェックを外させるのではなく、はじめから並べない。
+    /// 整理の画面に出さないことがそのまま「消えない」の保証になる
     static func stale(
         items: [StashItem],
         now: EpochMillis,
         thresholdMs: EpochMillis = thresholdMs
     ) -> [StashItem] {
         items
-            .filter { now - $0.savedAt >= thresholdMs }
+            .filter { !$0.favorite && now - $0.savedAt >= thresholdMs }
             .sorted { $0.savedAt < $1.savedAt }
     }
 

@@ -16,6 +16,7 @@ final class StashJsonTests: XCTestCase {
                     tags: ["読み物", "tech"],
                     savedAt: 1_234_567_890,
                     archived: false,
+                    favorite: true,
                     openCount: 2,
                     lastOpenedAt: 1_234_567_999,
                     remindAt: 1_234_600_000,
@@ -97,8 +98,9 @@ final class StashJsonTests: XCTestCase {
         XCTAssertEqual(item?.openCount, 3)
         XCTAssertEqual(item?.updatedAt, 1_750_000_010_000)
         XCTAssertEqual(item?.description, "リード文")
-        // リマインダーはiOS固有。Android版が書いたJSONにはキーが無い
+        // リマインダーとお気に入りはiOS固有。Android版が書いたJSONにはキーが無い
         XCTAssertNil(item?.remindAt)
+        XCTAssertEqual(item?.favorite, false)
         XCTAssertEqual(state?.collections.first?.icon, "bulb")
         XCTAssertEqual(state?.collections.first?.colorIndex, 2)
         XCTAssertEqual(state?.events.first?.type, UsageEvent.save)

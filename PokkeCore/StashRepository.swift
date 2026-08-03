@@ -190,6 +190,15 @@ final class StashRepository: ObservableObject {
         }
     }
 
+    /// お気に入りの出し入れ。立っている間は一括整理の対象から外れる
+    func setFavorite(id: String, favorite: Bool) {
+        mutate { s in
+            guard let index = s.items.firstIndex(where: { $0.id == id }) else { return }
+            s.items[index].favorite = favorite
+            s.items[index].updatedAt = nowMillis()
+        }
+    }
+
     func setArchived(id: String, archived: Bool) {
         mutate { s in
             guard let index = s.items.firstIndex(where: { $0.id == id }) else { return }

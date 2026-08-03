@@ -24,6 +24,12 @@ struct StashItem: Identifiable, Equatable, Hashable {
     var tags: [String] = []
     var savedAt: EpochMillis
     var archived: Bool = false
+    /// ずっと手元に残しておきたい印。
+    ///
+    /// アーカイブ（読み終えて片付けた）とは別の軸で、どちらの状態でも立てられる。
+    /// 立っているものは古いリンクの一括整理（`OldItems`）の対象から外れる。
+    /// **iOS固有のフィールド**（`remindAt` と同じ扱い。下の注記を参照）
+    var favorite: Bool = false
     var openCount: Int = 0
     var lastOpenedAt: EpochMillis?
     /// リマインダーの通知時刻。設定していなければ nil。
@@ -46,6 +52,7 @@ struct StashItem: Identifiable, Equatable, Hashable {
         tags: [String] = [],
         savedAt: EpochMillis,
         archived: Bool = false,
+        favorite: Bool = false,
         openCount: Int = 0,
         lastOpenedAt: EpochMillis? = nil,
         remindAt: EpochMillis? = nil,
@@ -61,6 +68,7 @@ struct StashItem: Identifiable, Equatable, Hashable {
         self.tags = tags
         self.savedAt = savedAt
         self.archived = archived
+        self.favorite = favorite
         self.openCount = openCount
         self.lastOpenedAt = lastOpenedAt
         self.remindAt = remindAt

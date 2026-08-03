@@ -192,6 +192,12 @@ private struct ItemMetaRow: View {
                 .lineLimit(1)
                 .fixedSize()
             Spacer(minLength: 0)
+            // 印を付けたものは一覧でも分かるようにする。整理から外れるのがこの印なので、
+            // どれが残るのかを開かずに見分けられる必要がある
+            if item.favorite {
+                LucideIconView(icon: Lucide.star, size: 12, color: Palette.accent600)
+                    .accessibilityLabel(L.s("filter_favorite"))
+            }
             // リマインダーを付けたことが一覧からも分かるようにする。
             // 鳴った後のものは予定ではないので出さない
             if ReminderPlan.isPending(item.remindAt, now: nowMillis()) {
@@ -225,6 +231,19 @@ struct ItemGridCard: View {
             .frame(maxWidth: .infinity)
             .frame(height: 104)
             .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            // グリッドは行のメタ情報を出さないので、印はサムネイルの上に載せる。
+            // 写真と重なっても読めるよう白い丸を敷く
+            .overlay(alignment: .topTrailing) {
+                if item.favorite {
+                    ZStack {
+                        Circle().fill(Palette.surface.opacity(0.92))
+                        LucideIconView(icon: Lucide.star, size: 11, color: Palette.accent700)
+                    }
+                    .frame(width: 22, height: 22)
+                    .padding(6)
+                    .accessibilityLabel(L.s("filter_favorite"))
+                }
+            }
 
             Text(item.title)
                 .font(PokkeType.bodyLarge)

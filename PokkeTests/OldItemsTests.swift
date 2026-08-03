@@ -5,13 +5,19 @@ final class OldItemsTests: XCTestCase {
     private let day: EpochMillis = 24 * 60 * 60 * 1000
     private let now: EpochMillis = 1_800_000_000_000
 
-    private func item(_ id: String, daysAgo: Int, archived: Bool = false) -> StashItem {
+    private func item(
+        _ id: String,
+        daysAgo: Int,
+        archived: Bool = false,
+        favorite: Bool = false
+    ) -> StashItem {
         StashItem(
             id: id,
             url: "https://example.com/\(id)",
             title: id,
             savedAt: now - EpochMillis(daysAgo) * day,
-            archived: archived
+            archived: archived,
+            favorite: favorite
         )
     }
 
@@ -37,6 +43,17 @@ final class OldItemsTests: XCTestCase {
         let items = [item("read", daysAgo: 20, archived: true), item("unread", daysAgo: 20)]
 
         XCTAssertEqual(Set(OldItems.stale(items: items, now: now).map(\.id)), ["read", "unread"])
+    }
+
+    /// お気に入りは何日たっても整理の一覧に出ない（＝まとめて消されない）
+    func testFavoritesAreNeverListed() {
+        let items = [
+            item("keep", daysAgo: 300, favorite: true),
+            item("keep-archived", daysAgo: 300, archived: true, favorite: true),
+            item("drop", daysAgo: 300),
+        ]
+
+        XCTAssertEqual(OldItems.stale(items: items, now: now).map(\.id), ["drop"])
     }
 
     func testNoticeNeedsEnoughItems() {
