@@ -2,24 +2,17 @@ import SwiftUI
 
 /// 詳細シートのリマインダー欄。
 ///
-/// 候補は「今から必ず未来になる」ものだけを並べてある（`ReminderPlan.Preset`）ので、
-/// 押した瞬間に過去の時刻が入ることはない。細かく決めたいときだけ日時を指定する。
+/// 候補は「明日の朝」ひとつだけ。時刻を細かく決めたいときは日時を指定する。
+/// どちらも「今から必ず未来になる」ので、押した瞬間に過去の時刻が入ることはない。
 struct ReminderSection: View {
     let item: StashItem
-    /// 詳細シートが持っている推論エンジン。タグ提案と共用して二重に確保しない
-    @Binding var aiSession: AnyObject?
 
     @EnvironmentObject private var toast: ToastController
-    @ObservedObject private var ai = AiAssistant.shared
     @ObservedObject private var scheduler = ReminderScheduler.shared
 
     /// 設定済みでも候補を出している最中か（「変更」を押した後）
     @State private var editing = false
     @State private var showDatePicker = false
-    /// AIの提案。採用するまでは保存しない
-    @State private var suggestion: (date: Date, reason: String?)?
-    @State private var suggesting = false
-    @State private var suggestFailed = false
     /// 設定しようとして許可が下りなかった。断られたことは覚えられていないので自分で持つ
     @State private var permissionDenied = false
 
@@ -95,7 +88,7 @@ struct ReminderSection: View {
         )
     }
 
-    /// 候補・日時指定・AIおまかせ
+    /// 候補と日時指定
     private var choices: some View {
         VStack(alignment: .leading, spacing: 10) {
             FlowLayout(spacing: 8) {
@@ -109,34 +102,10 @@ struct ReminderSection: View {
                 }
             }
 
-            // 端末内AIが使える端末だけ。押しても必ず失敗する入口は出さない
-            if showsAiEntryPoint(ai.availability) {
-                if let suggestion {
-                    suggestionCard(suggestion)
-                } else if suggesting {
-                    Text(L.s("ai_thinking"))
-                        .font(PokkeType.bodySmall)
-                        .foregroundStyle(Palette.neutral600)
-                } else {
-                    Button(action: suggestReminder) {
-                        HStack(spacing: 8) {
-                            LucideIconView(icon: Lucide.sparkles, size: 15, color: Palette.accent700)
-                            Text(L.s(suggestFailed ? "reminder_ai_retry" : "reminder_ai_action"))
-                                .font(PokkeType.labelMedium)
-                                .foregroundStyle(Palette.accent700)
-                        }
-                        .padding(.vertical, 6)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
             // 設定済みから「変更」で開いたときだけ、やめて戻れるようにする
             if item.remindAt != nil, editing {
                 Button {
                     editing = false
-                    suggestion = nil
                 } label: {
                     Text(L.s("action_cancel"))
                         .font(PokkeType.labelMedium)
@@ -146,43 +115,6 @@ struct ReminderSection: View {
                 .buttonStyle(.plain)
             }
         }
-    }
-
-    /// AIの提案。決めつけず、押して初めて入る形にする（タグ提案と同じ流儀）
-    private func suggestionCard(_ suggestion: (date: Date, reason: String?)) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                LucideIconView(icon: Lucide.sparkles, size: 15, color: Palette.accent700)
-                Text(reminderTimeText(suggestion.date.epochMillis))
-                    .font(PokkeType.labelLarge)
-                    .foregroundStyle(Palette.accent800)
-                Spacer(minLength: 0)
-            }
-            if let reason = suggestion.reason {
-                Text(reason)
-                    .font(PokkeType.bodySmall)
-                    .foregroundStyle(Palette.neutral700)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            HStack(spacing: 8) {
-                OutlinedPillButton(title: L.s("reminder_ai_accept"), height: 38) {
-                    apply(date: suggestion.date)
-                }
-                OutlinedPillButton(title: L.s("reminder_ai_other"), height: 38) {
-                    self.suggestion = nil
-                    suggestReminder()
-                }
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: Corner.medium, style: .continuous).fill(Palette.accent100)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Corner.medium, style: .continuous)
-                .stroke(Palette.accent.opacity(0.35), lineWidth: 1)
-        )
     }
 
     private var permissionNotice: some View {
@@ -224,36 +156,7 @@ struct ReminderSection: View {
             let at = ReminderPlan.notBefore(date, now: Date())
             StashRepository.shared.setReminder(id: item.id, at: at.epochMillis)
             editing = false
-            suggestion = nil
             toast.show(L.s("reminder_set", reminderTimeText(at.epochMillis)))
-        }
-    }
-
-    private func suggestReminder() {
-        guard #available(iOS 26.0, *) else { return }
-        suggesting = true
-        suggestFailed = false
-        let session = (aiSession as? AiSession) ?? {
-            let created = AiSession()
-            aiSession = created
-            return created
-        }()
-        let prompt = ReminderPlan.buildPrompt(
-            instruction: L.s("ai_reminder_instruction"),
-            item: item,
-            now: nowMillis()
-        )
-        Task {
-            let result = try? await session.suggestReminder(prompt: prompt)
-            if let result {
-                // モデルの答えは幅も夜更かしも直してから見せる
-                suggestion = (
-                    date: ReminderPlan.resolve(hoursFromNow: result.hoursFromNow, now: Date()),
-                    reason: ReminderPlan.refineReason(result.reason)
-                )
-            }
-            suggestFailed = result == nil
-            suggesting = false
         }
     }
 }

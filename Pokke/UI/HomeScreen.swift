@@ -108,12 +108,16 @@ struct HomeScreen: View {
             .padding(.horizontal, screenPadding)
             .padding(.top, 18)
 
+            // 知らせは一覧の外に置くので、下にも余白を持たせる。
+            // ヘッダーの下余白（12pt）は知らせの上に付くだけなので、これが無いと
+            // 知らせが1件目のカードにくっついて、同じ塊のように見えてしまう
+            let noticePadding = EdgeInsets(top: 12, leading: screenPadding, bottom: 12, trailing: screenPadding)
+
             // 上限に当たってから知るのでは遅い。手前から残りを見せておく
             let remaining = StashRepository.maxItems - state.items.count
             if remaining <= StashRepository.limitWarningRemaining {
                 LimitBanner(remaining: remaining)
-                    .padding(.horizontal, screenPadding)
-                    .padding(.top, 12)
+                    .padding(noticePadding)
             }
 
             // 寝かせたままのリンクがたまってきたら整理をすすめる。
@@ -122,8 +126,7 @@ struct HomeScreen: View {
                 CleanupBanner(count: staleCount, onOpen: onCleanup) {
                     prefs.snoozeCleanupNotice()
                 }
-                .padding(.horizontal, screenPadding)
-                .padding(.top, 12)
+                .padding(noticePadding)
             }
 
             TabView(selection: $selectedService) {

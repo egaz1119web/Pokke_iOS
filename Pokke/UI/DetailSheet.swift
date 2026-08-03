@@ -68,7 +68,7 @@ struct DetailSheet: View {
 
                 // コレクション・タグ（整理の話）より前に置く。あとで読むために
                 // 保存しているアプリなので、「いつ読むか」を決める方が先に来る
-                ReminderSection(item: item, aiSession: $aiSession).padding(.top, 18)
+                ReminderSection(item: item).padding(.top, 18)
 
                 collectionSection.padding(.top, 18)
                 tagSection.padding(.top, 18)

@@ -129,6 +129,9 @@ struct RootView: View {
             DetailSheet(item: item, collections: state.collections, allItems: state.items)
                 .environmentObject(toast)
         }
+        // 端末内AIが使えるかは、入口を出す前に分かっている方がよい。
+        // 画面に着いてから調べると、AI欄が一拍遅れて生えてくる
+        .task { await AiAssistant.shared.probeIfNeeded() }
         .onAppear {
             if AppPrefs.shared.needsOnboarding { showGuide = true }
             // 通知の予約はOS側に残っているが、消えたリンクのぶんが混ざっていることがある
@@ -143,6 +146,8 @@ struct RootView: View {
                 // 読み直した後に見るので、共有シート経由で貯めた分も件数に入る
                 maybeRequestReview()
                 syncReminders()
+                // 設定アプリでApple Intelligenceを入れて戻ってきた場合に拾う
+                Task { await AiAssistant.shared.recheck() }
             }
         }
         // 予約は保存内容の写しなので、リマインダーが動いたら必ず取り直す。
