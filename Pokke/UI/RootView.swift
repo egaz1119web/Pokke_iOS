@@ -39,12 +39,14 @@ private enum RootTab: Int, CaseIterable, Identifiable {
 struct RootView: View {
     @ObservedObject private var repository = StashRepository.shared
     @ObservedObject private var prefs = AppPrefs.shared
+    @ObservedObject private var notifications = NotificationRouter.shared
     @StateObject private var toast = ToastController()
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.requestReview) private var requestReview
 
     @State private var tab: RootTab = .home
     @State private var showAdd = false
+    @State private var showCleanup = false
     @State private var detailId: String?
     @State private var openedCollectionId: String?
     /// 初回起動時は共有からの保存方法を案内する
@@ -114,6 +116,12 @@ struct RootView: View {
                 return result
             }
         }
+        .sheet(isPresented: $showCleanup) {
+            // 開いた時点の一覧で固定する。開いている間に共有拡張やクラウド同期で
+            // 中身が入れ替わると、チェックした行と消える行がずれる
+            CleanupSheet(items: OldItems.stale(items: state.items, now: nowMillis()))
+                .environmentObject(toast)
+        }
         .sheet(item: Binding(
             get: { detailItem },
             set: { if $0 == nil { detailId = nil } }
@@ -121,8 +129,15 @@ struct RootView: View {
             DetailSheet(item: item, collections: state.collections, allItems: state.items)
                 .environmentObject(toast)
         }
+        // 端末内AIが使えるかは、入口を出す前に分かっている方がよい。
+        // 画面に着いてから調べると、AI欄が一拍遅れて生えてくる
+        .task { await AiAssistant.shared.probeIfNeeded() }
         .onAppear {
             if AppPrefs.shared.needsOnboarding { showGuide = true }
+            // 通知の予約はOS側に残っているが、消えたリンクのぶんが混ざっていることがある
+            syncReminders()
+            // 通知から起動した場合、画面が乗る前に届いているので拾いに行く
+            openFromNotification(notifications.openItemId)
         }
         .onChange(of: scenePhase) { _, phase in
             // 共有拡張が別プロセスで書き足した分をここで拾う
@@ -130,8 +145,40 @@ struct RootView: View {
                 repository.reloadFromDisk()
                 // 読み直した後に見るので、共有シート経由で貯めた分も件数に入る
                 maybeRequestReview()
+                syncReminders()
+                // 設定アプリでApple Intelligenceを入れて戻ってきた場合に拾う
+                Task { await AiAssistant.shared.recheck() }
             }
         }
+        // 予約は保存内容の写しなので、リマインダーが動いたら必ず取り直す。
+        // 自分で設定したときだけでなく、クラウド同期で別端末から入ってきた分や
+        // まとめて削除した分もここを通る
+        .onChange(of: reminderSignature) { _, _ in syncReminders() }
+        // 通知から起動したときは、そのリンクの詳細を開く
+        .onChange(of: notifications.openItemId) { _, id in openFromNotification(id) }
+    }
+
+    // MARK: - リマインダー
+
+    /// 予約に関わる部分だけを取り出した目印。
+    /// `state` 全体を見張るとタイトルの取得やタグ付けでも取り直しが走ってしまう
+    private var reminderSignature: [String] {
+        state.items.compactMap { item in
+            item.remindAt.map { "\(item.id):\($0)" }
+        }
+    }
+
+    private func syncReminders() {
+        Task { await ReminderScheduler.shared.sync(items: state.items) }
+    }
+
+    /// 通知から来た1件を開く。すでに消えている場合は何もしない
+    private func openFromNotification(_ id: String?) {
+        guard let id, state.items.contains(where: { $0.id == id }) else { return }
+        showGuide = false
+        showCleanup = false
+        detailId = id
+        notifications.openItemId = nil
     }
 
     // MARK: - ホームのスポットライト案内
@@ -211,6 +258,7 @@ struct RootView: View {
                 onItemTap: { detailId = $0.id },
                 onShowGuide: { showGuide = true },
                 onAddLink: { showAdd = true },
+                onCleanup: { showCleanup = true },
                 highlightItemId: tourItemId
             )
         case .collections:
@@ -226,7 +274,10 @@ struct RootView: View {
         case .search:
             SearchScreen(state: state, onItemTap: { detailId = $0.id })
         case .settings:
-            SettingsScreen(onShowGuide: { showGuide = true })
+            SettingsScreen(
+                onShowGuide: { showGuide = true },
+                onCleanup: { showCleanup = true }
+            )
         }
     }
 }

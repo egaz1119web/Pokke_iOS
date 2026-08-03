@@ -14,7 +14,7 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 | `Pokke/` | SwiftUIの画面、デザインシステム、Firebase、AdMob、アプリのエントリポイント | Pokke |
 | `Pokke/Fonts/` | 同梱フォント（Info.plist の `UIAppFonts` に対応） | Pokke |
 | `PokkeShare/` | 共有シート拡張（Androidの `ShareReceiverActivity` 相当） | PokkeShare |
-| `PokkeTests/` | ユニットテスト（Androidの `app/src/test` から移植、77件） | PokkeTests |
+| `PokkeTests/` | ユニットテスト（Androidの `app/src/test` からの移植＋iOS固有のぶん、136件） | PokkeTests |
 
 - Bundle ID: `com.egaz.stash`（Androidの applicationId と同じ）／拡張は `com.egaz.stash.Share`
 - App Group: `group.com.egaz.stash` — 共有拡張とアプリ本体が `stash.json` を共有するのに必要
@@ -39,9 +39,14 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
 | `res/values/strings.xml` + `values-ja` + `values-ko` | `Localizable.xcstrings`（キー名はAndroidと同一） |
 | `ShareReceiverActivity` | `PokkeShare`（Share Extension） |
 
-**JSONスキーマはAndroidと完全に同一**（キー名・エポックミリ秒）。同じGoogleアカウントで
+**JSONスキーマはAndroidと同一**（キー名・エポックミリ秒）。同じGoogleアカウントで
 ログインすればAndroid端末とiPhoneの間でそのまま同期される。`PokkeTests` に
 「Android版が書いたJSONを読める」ことの回帰テストを入れてある。
+
+例外は `items[].remindAt`（リマインダーの通知時刻）と `items[].favorite`（お気に入り）の
+2つで、どちらもiOSで足したキー。Android版は知らないので読み飛ばすが、
+**Android側でそのアイテムを更新すると値が落ちる**（iOS同士なら同期で運ばれる）。
+Android版に同じ機能を入れるときは同じキー名を使うこと。
 
 ### iOSで変えたところ
 
@@ -62,7 +67,10 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
   ([`Components.swift`](Pokke/UI/Components.swift))
 - **端末内AIは「試し撃ち」してから入口を出す**: `SystemLanguageModel` が `.available` を
   返してもモデルの実体が無く、生成させると `ModelManagerError 1026` で必ず失敗する
-  端末がある。短い生成を1回通してから使えると判断している（`AiAssistant.probeIfNeeded`）
+  端末がある。短い生成を1回通してから使えると判断している（`AiAssistant.probeIfNeeded`）。
+  **使えなかった結果は覚え込まない** — 設定でApple Intelligenceを有効にした直後や、
+  モデルの用意が終わる前に一度試したときに、再起動するまでAIが消えたままになるため。
+  待っても変わらないもの（非対応端末・iOS26未満）だけ一度で打ち切る
 - **ログインはGoogleに加えてSign in with Appleも用意**: App Store審査ガイドライン4.8対応
   （詳細は上の「ログイン / クラウド同期」）
 - **オンボーディングは3枚で、2枚目が動く図解**: 「その他→編集→＋→並べ替え→完了」で
@@ -81,6 +89,27 @@ open /Users/egaz/iOS/Pokke/Pokke.xcodeproj
   「メイン画像/動画にMediaViewを使っていない」を実装エラーとして出すため。
   Androidのレイアウトには無い要素なので、そこだけ縦に1枚多い
 - **配色はライト固定**: Android版が `lightColorScheme` 固定なので、`preferredColorScheme(.light)` で揃えた
+- **古いリンクをまとめて整理できる**: 保存から1週間以上たったものだけを集めたシート
+  （[`CleanupSheet.swift`](Pokke/UI/CleanupSheet.swift)）。**既定は全部にチェックが入っていて**、
+  残したいものだけ外して消す向きにしてある — 1件ずつ選ばせると、整理したい人ほど手数が増えるため。
+  対象にはアーカイブ済みも入れる（保存件数の上限はアーカイブしても減らないので、
+  外すと「整理したのに空きが増えない」ことになる）。**お気に入りだけは一覧に出さない**
+  — 整理の画面に並べないことが、そのまま「消えない」の保証になる。抽出は
+  [`PokkeCore/OldItems.swift`](PokkeCore/OldItems.swift) の純関数。
+  入口はホームのバナー（たまってきた時だけ・閉じると1週間出ない）と設定画面の「データ」
+- **お気に入り（`favorite`）がある**: ずっと残しておきたいリンクの印で、詳細画面の
+  見出し横の星から出し入れする。アーカイブとは別の軸なので、片付けたリンクにも付けられる。
+  ホーム上部の絞り込みは「未読／★／アーカイブ」の3つになっていて、★の面だけは
+  アーカイブ済みも含めて全部並べる。ピルを星印にしてあるのは、3つとも文字にすると
+  隣の表示切替と合わせて小さい端末で横に収まらないため
+- **リンクごとにリマインダーを置ける**: 詳細画面から通知時刻を決める
+  （[`ReminderSection.swift`](Pokke/UI/ReminderSection.swift)）。選べるのは「明日の朝」と
+  日時指定の2つだけで、どちらも**必ず未来になる**値しか作らない
+  （[`PokkeCore/ReminderPlan.swift`](PokkeCore/ReminderPlan.swift)）。細かい刻みを並べても
+  結局「明日の朝」に落ち着くので、候補はひとつに絞ってある。
+  OSへの予約（`ReminderScheduler`）は保存内容の**写し**で、個々の操作からではなく
+  保存内容ぜんぶを渡した差分で取り直す — そうしないと、クラウド同期で別端末から
+  入ってきた変更やまとめて削除したぶんを取りこぼす
 
 ### アイコンとフォント
 

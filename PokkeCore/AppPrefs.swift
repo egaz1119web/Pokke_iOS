@@ -22,17 +22,23 @@ final class AppPrefs: ObservableObject {
         static let viewMode = "view_mode"
         static let firstLaunchAt = "first_launch_at"
         static let reviewRequested = "review_requested"
+        static let cleanupSnoozedAt = "cleanup_snoozed_at"
     }
 
     private let defaults = UserDefaults.standard
 
     @Published private(set) var viewMode: ViewMode = .list
 
+    /// 古いリンクの整理をすすめるバナーを最後に閉じた時刻。
+    /// 閉じたことは端末ごとの都合なので、同期する `StashState` には入れない
+    @Published private(set) var cleanupSnoozedAt: EpochMillis = 0
+
     /// このアプリを最初に開いた時刻。レビュー依頼を「使い始めてどれくらいか」で測るために持つ
     private(set) var firstLaunchAt: EpochMillis = 0
 
     private init() {
         viewMode = defaults.string(forKey: Key.viewMode).flatMap(ViewMode.init(rawValue:)) ?? .list
+        cleanupSnoozedAt = (defaults.object(forKey: Key.cleanupSnoozedAt) as? Int64) ?? 0
 
         // 記録が無い＝今回が初回。以後この値は動かさない
         if let stored = defaults.object(forKey: Key.firstLaunchAt) as? Int64, stored > 0 {
@@ -57,6 +63,11 @@ final class AppPrefs: ObservableObject {
         defaults.set(true, forKey: Key.reviewRequested)
     }
 
+    func snoozeCleanupNotice() {
+        cleanupSnoozedAt = nowMillis()
+        defaults.set(cleanupSnoozedAt, forKey: Key.cleanupSnoozedAt)
+    }
+
     func setViewMode(_ mode: ViewMode) {
         viewMode = mode
         defaults.set(mode.rawValue, forKey: Key.viewMode)
@@ -64,10 +75,13 @@ final class AppPrefs: ObservableObject {
 
     /// 端末ローカルの設定を初期状態へ戻す（[AppDataReset] から呼ぶ）
     func resetAll() {
-        for key in [Key.onboarded, Key.viewMode, Key.firstLaunchAt, Key.reviewRequested] {
+        for key in [
+            Key.onboarded, Key.viewMode, Key.firstLaunchAt, Key.reviewRequested, Key.cleanupSnoozedAt,
+        ] {
             defaults.removeObject(forKey: key)
         }
         viewMode = .list
+        cleanupSnoozedAt = 0
         // 消したままだと0になり「使い始めてどれくらいか」の判定が壊れるので入れ直す
         firstLaunchAt = nowMillis()
         defaults.set(firstLaunchAt, forKey: Key.firstLaunchAt)

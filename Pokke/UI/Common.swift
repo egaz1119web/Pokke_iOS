@@ -15,6 +15,12 @@ func relativeTime(_ millis: EpochMillis) -> String {
     }
 }
 
+/// 「8月10日 9:00」のような、リマインダーの日時表示。
+/// 相対時刻（`relativeTime`）と違い、何日の何時に鳴るかは正確に見せる必要がある
+func reminderTimeText(_ millis: EpochMillis) -> String {
+    Date(epochMillis: millis).formatted(date: .abbreviated, time: .shortened)
+}
+
 /// リンクを開く＋再訪カウント。
 ///
 /// 常に端末の既定のブラウザ（またはそのURLを持つアプリ）へ渡す。
@@ -186,6 +192,18 @@ private struct ItemMetaRow: View {
                 .lineLimit(1)
                 .fixedSize()
             Spacer(minLength: 0)
+            // 印を付けたものは一覧でも分かるようにする。整理から外れるのがこの印なので、
+            // どれが残るのかを開かずに見分けられる必要がある
+            if item.favorite {
+                LucideIconView(icon: Lucide.star, size: 12, color: Palette.accent600)
+                    .accessibilityLabel(L.s("filter_favorite"))
+            }
+            // リマインダーを付けたことが一覧からも分かるようにする。
+            // 鳴った後のものは予定ではないので出さない
+            if ReminderPlan.isPending(item.remindAt, now: nowMillis()) {
+                LucideIconView(icon: Lucide.bell, size: 12, color: Palette.accent600)
+                    .accessibilityLabel(L.s("detail_reminder"))
+            }
             if showUnreadDot && item.unread { UnreadDot() }
         }
     }
@@ -213,6 +231,19 @@ struct ItemGridCard: View {
             .frame(maxWidth: .infinity)
             .frame(height: 104)
             .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            // グリッドは行のメタ情報を出さないので、印はサムネイルの上に載せる。
+            // 写真と重なっても読めるよう白い丸を敷く
+            .overlay(alignment: .topTrailing) {
+                if item.favorite {
+                    ZStack {
+                        Circle().fill(Palette.surface.opacity(0.92))
+                        LucideIconView(icon: Lucide.star, size: 11, color: Palette.accent700)
+                    }
+                    .frame(width: 22, height: 22)
+                    .padding(6)
+                    .accessibilityLabel(L.s("filter_favorite"))
+                }
+            }
 
             Text(item.title)
                 .font(PokkeType.bodyLarge)
