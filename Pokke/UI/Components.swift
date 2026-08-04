@@ -5,6 +5,20 @@ import SwiftUI
 /// SwiftUI既定のコンポーネントをそのまま使うとシステムの色・角丸が混ざるので、
 /// 見た目を決める要素（面・影・枠・押下時の縮み）はここに集約している。
 
+// MARK: - アニメーション
+
+/// アニメーションを挟まずに状態を変える。
+///
+/// ページ送り（`TabView(.page)`）を含む画面では、既定のままだと
+/// ページ差し替えのアニメーションが同じ更新に相乗りしてしまい、
+/// 直接は関係ないセグメントの白い面まで、0.5秒かけてゆっくり浮かび上がってくる。
+/// 押した瞬間に切り替わってほしいところは、これで包む。
+func withoutAnimation(_ body: () -> Void) {
+    var transaction = Transaction()
+    transaction.disablesAnimations = true
+    withTransaction(transaction, body)
+}
+
 // MARK: - 押下
 
 /// 押したときに少し縮むボタン。
@@ -244,6 +258,12 @@ struct SegmentPill<Content: View>: View {
                         .opacity(selected ? 1 : 0)
                 )
                 .contentShape(Capsule())
+                // 選択の見た目は押した瞬間に入れ替える。
+                // 文字色は SwiftUI が補間しないので黙っていても即時だが、線画アイコンは
+                // 図形の線色＝補間される値なので、外から流れてきたアニメーションに
+                // 乗って0.4秒かけてじわっと色が変わってしまう。
+                // ボタンの外側に付けても中身までは届かないので、ラベルの中に置く
+                .transaction { $0.animation = nil }
         }
         .buttonStyle(.plain)
     }

@@ -150,7 +150,9 @@ struct HomeScreen: View {
         .onChange(of: pages) { _, current in
             if let selected = selectedService, !current.contains(selected) { selectedService = nil }
         }
-        .onChange(of: filter) { _, _ in selectedService = nil }
+        // 絞り込みを変えたらサービスの選択は外す。ここもページ送りを動かすので、
+        // アニメーションを挟まずに切り替える
+        .onChange(of: filter) { _, _ in withoutAnimation { selectedService = nil } }
     }
 
     private func items(for label: String?, groups: [DomainGroup]) -> [StashItem] {
@@ -327,7 +329,7 @@ private struct HomeHeader: View {
             HStack {
                 SegmentedPills {
                     SegmentPill(selected: filter == .inbox) {
-                        filter = .inbox
+                        withoutAnimation { filter = .inbox }
                     } content: {
                         SegmentLabel(
                             text: L.s("filter_unread"),
@@ -338,7 +340,7 @@ private struct HomeHeader: View {
                     // お気に入りだけ星印にしてある。3つとも文字にすると、
                     // 隣の表示切替と合わせて小さい端末で横に収まらない
                     SegmentPill(selected: filter == .favorite, horizontalPadding: 11) {
-                        filter = .favorite
+                        withoutAnimation { filter = .favorite }
                     } content: {
                         LucideIconView(
                             icon: Lucide.star,
@@ -353,7 +355,7 @@ private struct HomeHeader: View {
                     }
                     .accessibilityLabel(L.s("filter_favorite"))
                     SegmentPill(selected: filter == .archived) {
-                        filter = .archived
+                        withoutAnimation { filter = .archived }
                     } content: {
                         SegmentLabel(
                             text: L.s("filter_archived"),
