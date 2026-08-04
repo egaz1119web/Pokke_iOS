@@ -16,6 +16,15 @@ enum AddLinkResult {
     }
 }
 
+/// `addLink` を実際に呼ぶ前に、その結果を確かめたい場面向け（共有拡張のコレクション選択UIなど）。
+/// 保存はしない。`.ready` の場合だけ、その後 `addLink` を呼べば確実に保存できる。
+enum AddLinkPrecheck: Equatable {
+    case ready(String)
+    case alreadySaved
+    case invalidUrl
+    case limitReached
+}
+
 /// アプリ全データの保管庫。App Groupコンテナの stash.json にJSONで永続化する。
 /// デモ規模なので全件メモリ保持＋都度書き出しのシンプル構成。
 @MainActor
@@ -71,9 +80,10 @@ final class StashRepository: ObservableObject {
         mutate { $0.pickSkippedIds.append(itemId) }
     }
 
-    /// URLを保存。タイトル等はまず仮置きし、バックグラウンドでOGPを取得して差し替える
+    /// URLを保存。タイトル等はまず仮置きし、バックグラウンドでOGPを取得して差し替える。
+    /// `collectionId` を渡さなければ未分類のまま保存する（あとから詳細画面で選べる）
     @discardableResult
-    func addLink(_ url: String) -> AddLinkResult {
+    func addLink(_ url: String, collectionId: String? = nil) -> AddLinkResult {
         guard let normalized = Self.normalizeUrl(url) else { return .invalidUrl }
         // 同一URLは重複保存しない。件数が増えないので上限判定より先に見る
         if let existing = state.items.first(where: { $0.url == normalized }) { return .saved(existing) }
@@ -83,6 +93,7 @@ final class StashRepository: ObservableObject {
             id: UUID().uuidString,
             url: normalized,
             title: Self.displayFallbackTitle(normalized),
+            collectionId: collectionId,
             savedAt: nowMillis()
         )
         mutate {
@@ -91,6 +102,14 @@ final class StashRepository: ObservableObject {
         }
         Task { await fetchMetadata(for: item.id, url: normalized) }
         return .saved(item)
+    }
+
+    /// `addLink` が何をするか（≒保存前にコレクション選択UIを出す価値があるか）を、保存せずに確かめる
+    func precheckAddLink(_ url: String) -> AddLinkPrecheck {
+        guard let normalized = Self.normalizeUrl(url) else { return .invalidUrl }
+        if state.items.contains(where: { $0.url == normalized }) { return .alreadySaved }
+        guard state.items.count < Self.maxItems else { return .limitReached }
+        return .ready(normalized)
     }
 
     /// 上限まであと何件か。0なら満杯

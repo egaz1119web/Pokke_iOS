@@ -1,14 +1,17 @@
+import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
 /// 共有シート専用の受け口。Android の ShareReceiverActivity 相当。
 ///
-/// URLを保存してトースト風の表示を一瞬出したら、自分で完了して共有元アプリへ戻る。
+/// コレクションが1つもあれば選択カードを出し、選ぶかスキップ（あとで追加）してもらってから保存する。
+/// コレクションが無ければ選ぶ意味が無いので、そのまま保存してトースト風の表示を一瞬出して閉じる。
 /// 保存先は App Group の stash.json なので、アプリ本体は次のフォアグラウンド復帰時に
 /// これを読み込んでマージする（OGPの取得もそのタイミングで走る）。
 final class ShareViewController: UIViewController {
 
     private let toast = UILabel()
+    private var pickerHosting: UIHostingController<SharePickerView>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -18,17 +21,67 @@ final class ShareViewController: UIViewController {
         Task { @MainActor in
             let text = await extractSharedText()
             StashRepository.shared.initialize()
-            let result = text.map { StashRepository.shared.addLink($0) } ?? .invalidUrl
-            // 上限の知らせは「次に何をすればいいか」まで書いてあるので、短いと読み切れない
-            let (key, hold): (String, UInt64) = switch result {
-            case .saved: ("share_saved", 900_000_000)
-            case .limitReached: ("share_limit_reached", 1_800_000_000)
-            case .invalidUrl: ("share_no_url", 900_000_000)
-            }
-            show(message: L.s(key))
-            try? await Task.sleep(nanoseconds: hold)
-            extensionContext?.completeRequest(returningItems: nil)
+            await handleShared(text)
         }
+    }
+
+    @MainActor
+    private func handleShared(_ text: String?) async {
+        guard let text, case let .ready(normalized) = StashRepository.shared.precheckAddLink(text) else {
+            await finish(with: text.map { StashRepository.shared.addLink($0) } ?? .invalidUrl)
+            return
+        }
+
+        let collections = StashRepository.shared.state.collections
+        guard !collections.isEmpty else {
+            await finish(with: StashRepository.shared.addLink(normalized))
+            return
+        }
+
+        presentCollectionPicker(url: normalized, collections: collections)
+    }
+
+    private func presentCollectionPicker(url: String, collections: [StashCollection]) {
+        let picker = SharePickerView(url: url, collections: collections) { [weak self] collectionId in
+            guard let self else { return }
+            self.dismissPicker()
+            let result = StashRepository.shared.addLink(url, collectionId: collectionId)
+            Task { @MainActor in await self.finish(with: result) }
+        }
+        let hosting = UIHostingController(rootView: picker)
+        hosting.view.backgroundColor = .clear
+        addChild(hosting)
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hosting.view)
+        NSLayoutConstraint.activate([
+            hosting.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hosting.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        hosting.didMove(toParent: self)
+        pickerHosting = hosting
+    }
+
+    private func dismissPicker() {
+        guard let hosting = pickerHosting else { return }
+        hosting.willMove(toParent: nil)
+        hosting.view.removeFromSuperview()
+        hosting.removeFromParent()
+        pickerHosting = nil
+    }
+
+    @MainActor
+    private func finish(with result: AddLinkResult) async {
+        // 上限の知らせは「次に何をすればいいか」まで書いてあるので、短いと読み切れない
+        let (key, hold): (String, UInt64) = switch result {
+        case .saved: ("share_saved", 900_000_000)
+        case .limitReached: ("share_limit_reached", 1_800_000_000)
+        case .invalidUrl: ("share_no_url", 900_000_000)
+        }
+        show(message: L.s(key))
+        try? await Task.sleep(nanoseconds: hold)
+        extensionContext?.completeRequest(returningItems: nil)
     }
 
     /// 共有されたURL/テキストを取り出す。SafariはURL型、他アプリはプレーンテキストで渡してくる
