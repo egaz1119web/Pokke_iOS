@@ -5,7 +5,7 @@ import SwiftUI
 /// 本体アプリ（Pokke/UI/Theme.swift）のPaletteはこのターゲットには含めていないので、
 /// 見た目を合わせるための最小限の色だけをここに複製している。
 /// リンクの保存自体は常に行われる。ここで選ぶのは「どのコレクションに入れるか」だけで、
-/// 決めたくなければ `onPick(nil)` （あとで追加）で未分類のまま保存できる。
+/// 決めたくなければ `onPick(nil)` （とりあえず追加する）で未分類のまま保存できる。
 struct SharePickerView: View {
     let url: String
     let collections: [StashCollection]
@@ -20,7 +20,7 @@ struct SharePickerView: View {
         ZStack(alignment: .bottom) {
             Color.black.opacity(0.35)
                 .ignoresSafeArea()
-                // 外側タップは「あとで追加」と同じ扱い。共有した内容は必ず保存されてほしいので、
+                // 外側タップは「とりあえず追加する」と同じ扱い。共有した内容は必ず保存されてほしいので、
                 // ここで消しても保存自体は残る
                 .onTapGesture { onPick(nil) }
 
@@ -47,7 +47,7 @@ struct SharePickerView: View {
                 Button {
                     onPick(nil)
                 } label: {
-                    Text(L.s("share_add_later"))
+                    Text(L.s("share_add_now"))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(SharePalette.ink)
                         .frame(maxWidth: .infinity)

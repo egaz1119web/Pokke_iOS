@@ -197,6 +197,22 @@ final class StashRepository: ObservableObject {
         }
     }
 
+    /// まとめてコレクションへ入れる。`collectionId` が nil なら未分類へ戻す。
+    ///
+    /// 1件が属せるコレクションは1つなので、既に別のコレクションに入っているものは
+    /// 入れ替わる。`deleteItems` と同じく書き込みは1回にまとめる
+    func setCollection(ids: [String], collectionId: String?) {
+        guard !ids.isEmpty else { return }
+        let now = nowMillis()
+        let targets = Set(ids)
+        mutate { s in
+            for index in s.items.indices where targets.contains(s.items[index].id) {
+                s.items[index].collectionId = collectionId
+                s.items[index].updatedAt = now
+            }
+        }
+    }
+
     /// リマインダーの設定・解除。`at` が nil なら解除。
     ///
     /// 通知そのものの登録は端末ローカルの話なので、ここでは時刻を持つだけ。

@@ -146,6 +146,8 @@ private struct CollectionDetail: View {
     @State private var showEdit = false
     @State private var showAskAi = false
     @ObservedObject private var ai = AiAssistant.shared
+    // 表示形式はホームと同じものを見る。同じリンクの見え方が場所で変わらないように
+    @ObservedObject private var prefs = AppPrefs.shared
 
     private var items: [StashItem] {
         state.items
@@ -158,12 +160,32 @@ private struct CollectionDetail: View {
             ScrollView {
                 LazyVStack(spacing: 10) {
                     header
+                    // 1件も無いうちは切り替えるものが無い
+                    if !items.isEmpty {
+                        HStack {
+                            Spacer(minLength: 0)
+                            ViewModeToggle()
+                        }
+                    }
                     // 中身が無いコレクションでは答える材料が無いので出さない
                     if showsAiEntryPoint(ai.availability), !items.isEmpty {
                         AiAskBar(text: L.s("ai_ask_this_collection")) { showAskAi = true }
                     }
                     if items.isEmpty {
                         CollectionEmptyState(collection: collection, onBrowseLinks: onBrowseLinks)
+                    } else if prefs.viewMode == .grid {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: 11, alignment: .top),
+                                GridItem(.flexible(), spacing: 11, alignment: .top),
+                            ],
+                            spacing: 11
+                        ) {
+                            ForEach(items) { item in
+                                ItemGridCard(item: item) { onItemTap(item) }
+                            }
+                        }
+                        .padding(.top, 1)
                     } else {
                         ForEach(items) { item in
                             ItemRow(
@@ -355,15 +377,7 @@ private struct CollectionDialog: View {
 
                     DialogSectionLabel(text: L.s("collection_color"))
                         .padding(.top, 16)
-                    HStack(spacing: 9) {
-                        ForEach(Palette.collectionColors.indices, id: \.self) { index in
-                            ColorDot(
-                                color: Palette.collectionColors[index],
-                                selected: index == colorIndex
-                            ) { colorIndex = index }
-                        }
-                    }
-                    .padding(.top, 8)
+                    ColorGrid(selected: $colorIndex).padding(.top, 8)
 
                     HStack(spacing: 8) {
                         if let existing {
@@ -512,6 +526,28 @@ private struct IconGrid: View {
     }
 }
 
+/// 色の候補を6列で並べる。1列に収めると、数が増えたぶんだけ丸が小さくなって選びにくい
+private struct ColorGrid: View {
+    @Binding var selected: Int
+
+    var body: some View {
+        LazyVGrid(
+            columns: Array(
+                repeating: GridItem(.flexible(), spacing: 7),
+                count: Palette.collectionColorColumns
+            ),
+            spacing: 7
+        ) {
+            ForEach(Palette.collectionColors.indices, id: \.self) { index in
+                ColorDot(
+                    color: Palette.collectionColors[index],
+                    selected: index == selected
+                ) { selected = index }
+            }
+        }
+    }
+}
+
 private struct ColorDot: View {
     let color: Color
     let selected: Bool
@@ -526,7 +562,8 @@ private struct ColorDot: View {
                     LucideIconView(icon: Lucide.check, size: 15, color: Palette.ink)
                 }
             }
-            .frame(width: 38, height: 38)
+            // マスは正方形。列幅にまかせると縦に潰れる
+            .aspectRatio(1, contentMode: .fit)
             .overlay(Circle().stroke(selected ? Palette.ink : Color.clear, lineWidth: 2.5))
             .contentShape(Circle())
         }

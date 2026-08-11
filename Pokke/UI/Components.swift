@@ -44,16 +44,37 @@ extension ButtonStyle where Self == PressScaleButtonStyle {
 // MARK: - 面
 
 /// 白いカード。角丸22pt・shadow-sm
+///
+/// [borderColor] は枠で状態を示したいとき（編集モードで選ばれている等）に使う。
 struct PokkeCard<Content: View>: View {
     var padding: CGFloat = 12
     var cornerRadius: CGFloat = Corner.large
+    var borderColor: Color = .clear
     var action: (() -> Void)?
+    var onLongPress: (() -> Void)?
     @ViewBuilder var content: () -> Content
+
+    @State private var pressing = false
 
     var body: some View {
         if let action {
-            Button(action: action) { surface }
-                .buttonStyle(.pressScale())
+            if let onLongPress {
+                // 長押しを拾う必要があるときは Button を使わない。
+                // Button に長押しのジェスチャーを重ねると、指を離したときに
+                // タップまで続けて成立してしまう（＝選び直しが起きる）。
+                // タップと長押しを同じ層に置けば、SwiftUI がどちらか一方に決める
+                surface
+                    .scaleEffect(pressing ? 0.98 : 1)
+                    .animation(.easeOut(duration: 0.12), value: pressing)
+                    .onTapGesture(perform: action)
+                    .onLongPressGesture(minimumDuration: 0.45) {
+                        onLongPress()
+                    } onPressingChanged: { pressing = $0 }
+                    .accessibilityAddTraits(.isButton)
+            } else {
+                Button(action: action) { surface }
+                    .buttonStyle(.pressScale())
+            }
         } else {
             surface
         }
@@ -67,8 +88,34 @@ struct PokkeCard<Content: View>: View {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Palette.surface)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(borderColor, lineWidth: 2)
+            )
             .softShadow(.sm)
             .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+}
+
+/// 選択中かどうかを示す丸いチェック。編集モードのカードに添える。
+///
+/// 選んでいない間も枠だけ出しておく。出したり消したりすると、
+/// どこを押せば選べるのかが分からない
+struct SelectionCheck: View {
+    let selected: Bool
+    var size: CGFloat = 24
+
+    var body: some View {
+        ZStack {
+            Circle().fill(selected ? Palette.accent : Palette.surface.opacity(0.92))
+            if selected {
+                LucideIconView(icon: Lucide.check, size: size * 0.55, color: .white)
+            }
+        }
+        .frame(width: size, height: size)
+        .overlay(
+            Circle().stroke(selected ? Palette.accent : Palette.neutral400, lineWidth: 1.5)
+        )
     }
 }
 
@@ -266,6 +313,44 @@ struct SegmentPill<Content: View>: View {
                 .transaction { $0.animation = nil }
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// リスト／グリッドの切り替え。ホームとコレクション詳細で同じものを使う。
+///
+/// 選んだ形は `AppPrefs.viewMode` にそのまま入るので、どちらの画面で切り替えても
+/// もう一方に効く。画面ごとに別々に覚えると、同じリンクの見え方が場所によって
+/// 変わってしまい、切り替えたつもりが効いていないように見える。
+struct ViewModeToggle: View {
+    @ObservedObject private var prefs = AppPrefs.shared
+
+    var body: some View {
+        SegmentedPills {
+            ViewModePill(
+                icon: Lucide.listView,
+                label: L.s("view_list"),
+                selected: prefs.viewMode == .list
+            ) { prefs.setViewMode(.list) }
+            ViewModePill(
+                icon: Lucide.grid,
+                label: L.s("view_grid"),
+                selected: prefs.viewMode == .grid
+            ) { prefs.setViewMode(.grid) }
+        }
+    }
+}
+
+private struct ViewModePill: View {
+    let icon: Lucide.Icon
+    let label: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        SegmentPill(selected: selected, horizontalPadding: 9, width: 36, action: action) {
+            LucideIconView(icon: icon, size: 17, color: selected ? Palette.ink : Palette.neutral700)
+                .accessibilityLabel(label)
+        }
     }
 }
 

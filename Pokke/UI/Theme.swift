@@ -63,16 +63,51 @@ enum Palette {
     static let danger = accent800
 
     /// コレクションカードの地色。淡い面なので、上に載せる文字はインクのままで読める。
-    /// 既存データの colorIndex は 0〜7 が入りうるので、必ず [collectionColor] 経由で丸めること。
+    ///
+    /// colorIndex はこの並びの位置そのもの。**足すときは必ず末尾へ**。
+    /// 途中に挟むと、既に作られているコレクションの色がいっせいに別の色へずれる。
+    /// 選択欄は [collectionColorColumns] 列で並べるので、件数はその倍数のままにしておくこと。
+    ///
+    /// 既存データの colorIndex は範囲外の値が入りうるので、必ず [collectionColor] 経由で丸めること。
     static let collectionColors: [Color] = [
+        // 1段目: 最初からある6色。並び順は変えない
         accent100, accent200, accent2_100, accent2_200, neutral200, neutral300,
+        // 2段目: 赤〜黄
+        CollectionTints.rose, CollectionTints.cherry, CollectionTints.coral,
+        CollectionTints.clay, CollectionTints.amber, CollectionTints.butter,
+        // 3段目: 緑〜紫
+        CollectionTints.mint, CollectionTints.teal, CollectionTints.sky,
+        CollectionTints.denim, CollectionTints.lilac, CollectionTints.orchid,
     ]
+
+    /// 色の選択欄の列数。[collectionColors] はこの倍数で持つ
+    static let collectionColorColumns = 6
 
     /// 負のインデックスでも巡回する（Kotlinの Int.mod 相当）
     static func collectionColor(_ colorIndex: Int) -> Color {
         let count = collectionColors.count
         return collectionColors[((colorIndex % count) + count) % count]
     }
+}
+
+/// コレクション専用の淡い色。
+///
+/// ランプの100〜200と同じ明るさに揃えてあるので、どれを選んでも上の文字は
+/// そのまま読める。彩度は上げすぎない — クリーム地の上で1枚だけ浮くと、
+/// 一覧が「色の見本帳」になってしまう。
+private enum CollectionTints {
+    static let rose = Color(hex: 0xF8D9DE)
+    static let cherry = Color(hex: 0xF2C4CB)
+    static let coral = Color(hex: 0xFBD0C4)
+    static let clay = Color(hex: 0xEFC5B0)
+    static let amber = Color(hex: 0xFBE4BC)
+    static let butter = Color(hex: 0xF5EFBB)
+    static let mint = Color(hex: 0xCDE9D7)
+    static let teal = Color(hex: 0xC3E4E3)
+    static let sky = Color(hex: 0xD3E5F3)
+    static let denim = Color(hex: 0xC8D8F0)
+    static let lilac = Color(hex: 0xE1DBF3)
+    static let orchid = Color(hex: 0xEFD5E7)
 }
 
 /// 影。デザイントークンの shadow-sm / md / lg。

@@ -18,4 +18,10 @@ enum L {
     static func plural(_ key: String, _ count: Int) -> String {
         String.localizedStringWithFormat(s(key), count)
     }
+
+    /// 数で形が変わる文に、名前などをもう1つ差し込む版。
+    /// 件数が `%1$lld`、差し込みが `%2$@` の順であること
+    static func plural(_ key: String, _ count: Int, _ arg: String) -> String {
+        String.localizedStringWithFormat(s(key), count, arg)
+    }
 }

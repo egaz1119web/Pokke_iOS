@@ -137,6 +137,9 @@ struct LinkImage: View {
 ///
 /// ホームは大きめのサムネイル＋抜粋、コレクション詳細や検索結果は
 /// 小さめのサムネイルだけ、と密度を変えて使う。
+///
+/// [selecting] が true のときは編集モード。行の右端にチェックが出て、
+/// [onTap] は「開く」ではなく「選ぶ／外す」の意味になる（呼び出し側で差し替える）。
 struct ItemRow: View {
     let item: StashItem
     var thumbnailSize: CGFloat = 76
@@ -144,10 +147,17 @@ struct ItemRow: View {
     var showExcerpt = true
     // 検索結果は「絞り込みで見つける」画面であって未読管理の画面ではないため出さない
     var showUnreadDot = true
+    var selecting = false
+    var selected = false
+    var onLongPress: (() -> Void)?
     let onTap: () -> Void
 
     var body: some View {
-        PokkeCard(action: onTap) {
+        PokkeCard(
+            borderColor: selecting && selected ? Palette.accent : .clear,
+            action: onTap,
+            onLongPress: onLongPress
+        ) {
             HStack(spacing: 12) {
                 Thumbnail(item: item, size: thumbnailSize, corner: thumbnailCorner)
                 VStack(alignment: .leading, spacing: 4) {
@@ -166,6 +176,9 @@ struct ItemRow: View {
                     ItemMetaRow(item: item, showUnreadDot: showUnreadDot)
                 }
                 Spacer(minLength: 0)
+                if selecting {
+                    SelectionCheck(selected: selected)
+                }
             }
         }
     }
@@ -220,10 +233,18 @@ struct UnreadDot: View {
 /// グリッド表示用のカード。サムネイルを大きく見せる
 struct ItemGridCard: View {
     let item: StashItem
+    var selecting = false
+    var selected = false
+    var onLongPress: (() -> Void)?
     let onTap: () -> Void
 
     var body: some View {
-        PokkeCard(padding: 9, action: onTap) {
+        PokkeCard(
+            padding: 9,
+            borderColor: selecting && selected ? Palette.accent : .clear,
+            action: onTap,
+            onLongPress: onLongPress
+        ) {
             ZStack {
                 ServiceVisual.of(host: item.host).tint
                 LinkImage(item: item, logoSize: 32, fill: true)
@@ -231,6 +252,13 @@ struct ItemGridCard: View {
             .frame(maxWidth: .infinity)
             .frame(height: 104)
             .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            // 行と違って添える場所が無いので、チェックはサムネイルの上に載せる。
+            // お気に入りの星が右上にいるので、こちらは左上
+            .overlay(alignment: .topLeading) {
+                if selecting {
+                    SelectionCheck(selected: selected, size: 22).padding(6)
+                }
+            }
             // グリッドは行のメタ情報を出さないので、印はサムネイルの上に載せる。
             // 写真と重なっても読めるよう白い丸を敷く
             .overlay(alignment: .topTrailing) {

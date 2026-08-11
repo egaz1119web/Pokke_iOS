@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 /// 共有シート専用の受け口。Android の ShareReceiverActivity 相当。
 ///
-/// コレクションが1つもあれば選択カードを出し、選ぶかスキップ（あとで追加）してもらってから保存する。
+/// コレクションが1つもあれば選択カードを出し、選ぶかスキップ（とりあえず追加する）してもらってから保存する。
 /// コレクションが無ければ選ぶ意味が無いので、そのまま保存してトースト風の表示を一瞬出して閉じる。
 /// 保存先は App Group の stash.json なので、アプリ本体は次のフォアグラウンド復帰時に
 /// これを読み込んでマージする（OGPの取得もそのタイミングで走る）。
@@ -12,6 +12,24 @@ final class ShareViewController: UIViewController {
 
     private let toast = UILabel()
     private var pickerHosting: UIHostingController<SharePickerView>?
+
+    /// 幕（黒35%）もカードもこちらで描くので、このビューコントローラの背景は透過にしてある。
+    /// ところがOSがこれを載せている**外側の面**は不透明のままで、カードより上が
+    /// 明るいグレーの帯として残る（幕の黒35%が systemGroupedBackground に乗った色）。
+    ///
+    /// 不透明な面は直上ではなくもっと祖先側にあるので、窓まで辿って透かす。
+    /// 透けた先には共有元のアプリが出るので、幕が幕として見えるようになる。
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        var ancestor = view.superview
+        while let current = ancestor {
+            current.backgroundColor = .clear
+            current.isOpaque = false
+            ancestor = current.superview
+        }
+        view.window?.backgroundColor = .clear
+        view.window?.isOpaque = false
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()

@@ -46,7 +46,7 @@ struct SpotlightStep {
 }
 
 extension SpotlightStep {
-    /// 初回案内で1件目を保存できた直後、ホームで流す4コマ
+    /// 初回案内で1件目を保存できた直後、ホームで流す5コマ
     static let afterFirstSave: [SpotlightStep] = [
         SpotlightStep(
             target: .savedItem,
@@ -77,6 +77,14 @@ extension SpotlightStep {
             bodyKey: "tour_nav_body",
             cornerRadius: 22,
             inset: 2
+        ),
+        // 最後にもう一度カードを指して、長押しでまとめて片付けられることを伝える。
+        // 保存したその場では要らない話なので、他をひととおり見せた後に置いている
+        SpotlightStep(
+            target: .savedItem,
+            icon: Lucide.check,
+            titleKey: "tour_edit_title",
+            bodyKey: "tour_edit_body"
         ),
     ]
 }

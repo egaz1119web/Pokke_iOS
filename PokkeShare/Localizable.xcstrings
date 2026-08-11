@@ -94,25 +94,25 @@
         }
       }
     },
-    "share_add_later": {
+    "share_add_now": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add later"
+            "value": "Just save it"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "あとで追加"
+            "value": "とりあえず追加する"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "나중에 추가"
+            "value": "일단 저장하기"
           }
         }
       }
