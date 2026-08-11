@@ -4,12 +4,14 @@ import SwiftUI
 ///
 /// 本体アプリ（Pokke/UI/Theme.swift）のPaletteはこのターゲットには含めていないので、
 /// 見た目を合わせるための最小限の色だけをここに複製している。
-/// リンクの保存自体は常に行われる。ここで選ぶのは「どのコレクションに入れるか」だけで、
-/// 決めたくなければ `onPick(nil)` （とりあえず追加する）で未分類のまま保存できる。
+///
+/// 保存の入口は2つで、コレクションを選ぶか「とりあえず追加する」（＝ `onPick(nil)` で未分類）。
+/// 幕の外を押したときだけは [onCancel] で、何も保存せずに閉じる。
 struct SharePickerView: View {
     let url: String
     let collections: [StashCollection]
     let onPick: (String?) -> Void
+    let onCancel: () -> Void
 
     private var host: String {
         guard let host = URLComponents(string: url)?.host else { return url }
@@ -20,9 +22,10 @@ struct SharePickerView: View {
         ZStack(alignment: .bottom) {
             Color.black.opacity(0.35)
                 .ignoresSafeArea()
-                // 外側タップは「とりあえず追加する」と同じ扱い。共有した内容は必ず保存されてほしいので、
-                // ここで消しても保存自体は残る
-                .onTapGesture { onPick(nil) }
+                // 幕の向こうには共有元のアプリが透けて見えている。この状態で外側を押すのは
+                // 「やっぱりやめる」なので、保存はしないで閉じる。
+                // 入れ先を決めずに保存したいときは「とりあえず追加する」の方
+                .onTapGesture(perform: onCancel)
 
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {

@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 /// 共有シート専用の受け口。Android の ShareReceiverActivity 相当。
 ///
 /// コレクションが1つもあれば選択カードを出し、選ぶかスキップ（とりあえず追加する）してもらってから保存する。
+/// カードの外（幕）を押されたときは、やめた合図として何も保存せずに閉じる。
 /// コレクションが無ければ選ぶ意味が無いので、そのまま保存してトースト風の表示を一瞬出して閉じる。
 /// 保存先は App Group の stash.json なので、アプリ本体は次のフォアグラウンド復帰時に
 /// これを読み込んでマージする（OGPの取得もそのタイミングで走る）。
@@ -65,6 +66,8 @@ final class ShareViewController: UIViewController {
             self.dismissPicker()
             let result = StashRepository.shared.addLink(url, collectionId: collectionId)
             Task { @MainActor in await self.finish(with: result) }
+        } onCancel: { [weak self] in
+            self?.cancel()
         }
         let hosting = UIHostingController(rootView: picker)
         hosting.view.backgroundColor = .clear
@@ -87,6 +90,15 @@ final class ShareViewController: UIViewController {
         hosting.view.removeFromSuperview()
         hosting.removeFromParent()
         pickerHosting = nil
+    }
+
+    /// 幕の外を押されたとき。保存はせず、知らせも出さずにすぐ引き上げる。
+    /// やめたことは共有元の画面がそのまま戻ってくることで分かるので、言葉は要らない
+    private func cancel() {
+        dismissPicker()
+        extensionContext?.cancelRequest(
+            withError: NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError)
+        )
     }
 
     @MainActor
