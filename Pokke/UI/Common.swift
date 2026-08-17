@@ -114,6 +114,9 @@ struct Thumbnail: View {
 /// OGP画像 → 失敗したらサービスのロゴ。
 /// 画像URLが取れていても実際には404や期限切れで表示できないことがあり、
 /// その場合に空白のままだと何のリンクか分からなくなるためロゴへ落とす。
+///
+/// 落ちたときはメタデータの取り直しも仕掛ける（`StashRepository.refetchBrokenThumbnail`）。
+/// 新しいURLが取れれば、ここも次の描画で画像に戻る。
 struct LinkImage: View {
     let item: StashItem
     var logoSize: CGFloat
@@ -137,7 +140,7 @@ struct LinkImage: View {
                         image.resizable().scaledToFit()
                     }
                 case .failure:
-                    logo
+                    logo.task { StashRepository.shared.refetchBrokenThumbnail(itemId: item.id) }
                 default:
                     Color.clear
                 }

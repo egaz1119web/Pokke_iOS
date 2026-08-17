@@ -136,6 +136,23 @@ final class StashRepository: ObservableObject {
         Task { await fetchMetadata(for: item.id, url: item.url) }
     }
 
+    /// サムネイルの取り直しを試した分。同じ1件を何度も叩かないための目印
+    private var retriedThumbnails: Set<String> = []
+
+    /// 表示できなかったサムネイルを取り直す。
+    ///
+    /// InstagramなどのCDNは画像URLに期限（署名）を持たせていて、数日で403になる。
+    /// 保存した端末は画像そのものを持っているので出続けるが、あとから同期した
+    /// もう一方の端末は取りに行った時点で切れていて、何も出せない。
+    /// URLは持っていても死んでいるので、その場で取り直して差し替える。
+    ///
+    /// 叩くのは1件につきアプリの起動中1回まで。単に消えたページや圏外でも
+    /// 失敗は起きるので、画面に出るたびに通信し続けないようにする
+    func refetchBrokenThumbnail(itemId: String) {
+        guard retriedThumbnails.insert(itemId).inserted else { return }
+        refetchMetadata(itemId: itemId)
+    }
+
     /// メタデータを取得して1件に反映する。取得できなければ何もしない
     private func fetchMetadata(for id: String, url: String) async {
         guard let meta = await MetadataFetcher.fetch(url) else { return }
