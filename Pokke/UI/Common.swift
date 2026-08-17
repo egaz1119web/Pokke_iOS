@@ -36,8 +36,33 @@ func openLink(_ item: StashItem) {
 /// 他のアプリへリンクを共有する。送信先はシステムの共有シートで利用者が選ぶ
 @MainActor
 func shareLink(_ item: StashItem, from sourceRect: CGRect? = nil) {
-    guard let url = URL(string: item.url), let presenter = topViewController() else { return }
-    let activity = UIActivityViewController(activityItems: [item.title, url], applicationActivities: nil)
+    guard let url = URL(string: item.url) else { return }
+    presentShareSheet(activityItems: [item.title, url], from: sourceRect)
+}
+
+/// 選んだぶんをまとめて共有する。
+///
+/// 1件のときは題名とURLを別々に渡す（＝[shareLink] と同じ）。受け取った側がリンクとして
+/// 扱えるので、メッセージなどでは見出し付きのカードになる。
+/// 複数のときは1つの文にまとめる。URLを並べて渡しても先頭だけしか拾わないアプリが多く、
+/// 送ったつもりの残りが黙って落ちてしまう
+@MainActor
+func shareLinks(_ items: [StashItem], from sourceRect: CGRect? = nil) {
+    guard !items.isEmpty else { return }
+    if items.count == 1 {
+        shareLink(items[0], from: sourceRect)
+        return
+    }
+    // 1件ぶんは「題名＋URL」の2行。件と件の間は空行で区切り、貼られた先で
+    // どこまでが1つのリンクなのかが分かるようにする
+    let text = items.map { "\($0.title)\n\($0.url)" }.joined(separator: "\n\n")
+    presentShareSheet(activityItems: [text], from: sourceRect)
+}
+
+@MainActor
+private func presentShareSheet(activityItems: [Any], from sourceRect: CGRect?) {
+    guard let presenter = topViewController() else { return }
+    let activity = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
     // iPadでは吹き出しの根元が要る。指定が無ければ画面中央から出す
     if let popover = activity.popoverPresentationController {
         popover.sourceView = presenter.view

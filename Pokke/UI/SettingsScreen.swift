@@ -7,7 +7,17 @@ struct SettingsScreen: View {
 
     @ObservedObject private var auth = AuthService.shared
     @ObservedObject private var consent = AdsConsent.shared
+    @ObservedObject private var prefs = AppPrefs.shared
     @EnvironmentObject private var toast: ToastController
+
+    /// 整理のお知らせの入切。切ったときは猶予をそのまま残し、
+    /// 入れ直したときだけ閉じた記録を戻す（`AppPrefs.setCleanupNoticeEnabled`）
+    private var cleanupNoticeBinding: Binding<Bool> {
+        Binding(
+            get: { prefs.cleanupNoticeEnabled },
+            set: { prefs.setCleanupNoticeEnabled($0) }
+        )
+    }
 
     @State private var loading = false
     @State private var message: String?
@@ -54,6 +64,26 @@ struct SettingsScreen: View {
                 // 出ないので、いつでも辿れる場所をここに用意しておく
                 PokkeCard(padding: 0) {
                     SettingsLinkRow(icon: Lucide.clock, text: L.s("settings_cleanup"), action: onCleanup)
+                    CardDivider()
+                    // 上の導線と対にして置く。声をかけるのを止めても、整理そのものは
+                    // いつでもできることが同じカードの中で分かる
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(L.s("settings_cleanup_notice"))
+                                .font(PokkeType.bodyLarge)
+                                .foregroundStyle(Palette.ink)
+                            Text(L.s("settings_cleanup_notice_description", OldItems.noticeDays))
+                                .font(PokkeType.bodySmall)
+                                .foregroundStyle(Palette.neutral600)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        PokkeSwitch(
+                            isOn: cleanupNoticeBinding,
+                            accessibilityLabel: L.s("settings_cleanup_notice")
+                        )
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 13)
                 }
                 .padding(.bottom, 10)
                 deleteCard

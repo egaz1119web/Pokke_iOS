@@ -184,7 +184,12 @@ private struct CheckBox: View {
 /// ホームに出す「古いリンクがたまっています」の知らせ。
 ///
 /// 保存の上限が近いことの知らせ（`LimitBanner`）と違って急ぎではないので、
-/// 閉じられるようにしてある（閉じると `OldItems.snoozeMs` のあいだ出ない）。
+/// 閉じられるようにしてある。閉じるたびに次までの猶予が延び、
+/// 使い切ると二度と出ない（`OldItems.snoozeMs(dismissCount:)`）。設定からも切れる。
+///
+/// ここに出す件数は `OldItems.noticeCount`（未アーカイブぶん）で、
+/// 開いた先の `CleanupSheet` に並ぶ件数（アーカイブ済みも含む）より少ない。
+/// 声をかける理由と、片付けて枠を空けられる範囲は別物なので、意図的にずらしてある。
 struct CleanupBanner: View {
     let count: Int
     let onOpen: () -> Void
@@ -195,7 +200,7 @@ struct CleanupBanner: View {
             LucideIconView(icon: Lucide.clock, size: 16, color: Palette.accent2_700)
                 .padding(.top, 1)
             VStack(alignment: .leading, spacing: 6) {
-                Text(L.s("cleanup_notice", OldItems.thresholdDays, count))
+                Text(L.s("cleanup_notice", OldItems.noticeDays, count))
                     .font(PokkeType.bodySmall)
                     .foregroundStyle(Palette.accent2_800)
                     .fixedSize(horizontal: false, vertical: true)

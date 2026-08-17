@@ -56,17 +56,85 @@ final class OldItemsTests: XCTestCase {
         XCTAssertEqual(OldItems.stale(items: items, now: now).map(\.id), ["drop"])
     }
 
+    /// 声をかける対象はシートに並ぶものより狭い
+    func testNoticeCountsFewerItemsThanTheSheetLists() {
+        // 8日前は整理シートには並ぶが、声をかける対象ではない
+        let items = [item("recent", daysAgo: 8), item("long", daysAgo: 40)]
+
+        XCTAssertEqual(OldItems.stale(items: items, now: now).count, 2)
+        XCTAssertEqual(OldItems.noticeCount(items: items, now: now), 1)
+    }
+
+    /// 片付けたぶんは声をかける件数に数えない
+    func testArchivedItemsAreNotCountedForTheNotice() {
+        let items = [
+            item("archived", daysAgo: 40, archived: true),
+            item("favorite", daysAgo: 40, favorite: true),
+            item("piled", daysAgo: 40),
+        ]
+
+        // シートには枠を空けるためアーカイブ済みも並ぶ
+        XCTAssertEqual(OldItems.stale(items: items, now: now).map(\.id), ["archived", "piled"])
+        XCTAssertEqual(OldItems.noticeCount(items: items, now: now), 1)
+    }
+
+    /// 持っている量が増えるほど声をかけ始める件数も上がる
+    func testNoticeThresholdGrowsWithTheLibrary() {
+        XCTAssertEqual(OldItems.noticeThreshold(totalCount: 0), OldItems.noticeMinCount)
+        XCTAssertEqual(OldItems.noticeThreshold(totalCount: 30), OldItems.noticeMinCount)
+        XCTAssertEqual(OldItems.noticeThreshold(totalCount: 300), 100)
+    }
+
     func testNoticeNeedsEnoughItems() {
-        XCTAssertFalse(OldItems.showsNotice(staleCount: OldItems.noticeThreshold - 1, snoozedAt: 0, now: now))
-        XCTAssertTrue(OldItems.showsNotice(staleCount: OldItems.noticeThreshold, snoozedAt: 0, now: now))
+        let threshold = OldItems.noticeThreshold(totalCount: 100)
+
+        XCTAssertFalse(notice(staleCount: threshold - 1, totalCount: 100))
+        XCTAssertTrue(notice(staleCount: threshold, totalCount: 100))
     }
 
     /// 閉じたら猶予のあいだは出さない。過ぎればまた出る
     func testNoticeStaysHiddenWhileSnoozed() {
-        let justClosed = now - day
-        XCTAssertFalse(OldItems.showsNotice(staleCount: 50, snoozedAt: justClosed, now: now))
+        let firstSnooze = OldItems.snoozeStepsMs[0]
 
-        let longAgo = now - OldItems.snoozeMs - day
-        XCTAssertTrue(OldItems.showsNotice(staleCount: 50, snoozedAt: longAgo, now: now))
+        XCTAssertFalse(notice(snoozedAt: now - firstSnooze + day, dismissCount: 1))
+        XCTAssertTrue(notice(snoozedAt: now - firstSnooze, dismissCount: 1))
+    }
+
+    /// 閉じるたびに猶予が延びる
+    func testSnoozeGrowsWithEachDismissal() {
+        let firstSnooze = OldItems.snoozeStepsMs[0]
+
+        // 1回目の猶予が明ける時刻でも、2回閉じたあとならまだ出ない
+        XCTAssertTrue(notice(snoozedAt: now - firstSnooze, dismissCount: 1))
+        XCTAssertFalse(notice(snoozedAt: now - firstSnooze, dismissCount: 2))
+    }
+
+    /// 猶予を使い切ったら二度と出さない
+    func testNoticeNeverReturnsAfterTheLastStep() {
+        let used = OldItems.snoozeStepsMs.count
+
+        XCTAssertFalse(notice(snoozedAt: 0, dismissCount: used + 1))
+        // どれだけ時間がたっても戻ってこない
+        XCTAssertFalse(notice(snoozedAt: now - 3650 * day, dismissCount: used + 1))
+    }
+
+    /// 一度も閉じていなければ猶予なしで出る
+    func testNoticeShowsWithoutSnoozeUntilDismissed() {
+        XCTAssertTrue(notice(snoozedAt: 0, dismissCount: 0))
+    }
+
+    private func notice(
+        staleCount: Int = 100,
+        totalCount: Int = 100,
+        snoozedAt: EpochMillis = 0,
+        dismissCount: Int = 0
+    ) -> Bool {
+        OldItems.showsNotice(
+            staleCount: staleCount,
+            totalCount: totalCount,
+            snoozedAt: snoozedAt,
+            dismissCount: dismissCount,
+            now: now
+        )
     }
 }

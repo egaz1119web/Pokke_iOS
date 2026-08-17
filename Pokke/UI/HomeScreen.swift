@@ -30,17 +30,17 @@ private func buildHomeRows(_ items: [StashItem]) -> [HomeRow] {
     return rows
 }
 
-/// ホーム上部の絞り込み。
+/// ホーム上部の絞り込み。未読とアーカイブは表裏で、どちらか一方しか選べない。
 ///
-/// お気に入りはアーカイブとは別の軸なので、片付けたぶんも含めて全部並べる
-/// （「残したい」と「読み終えた」は両立する）。
+/// **お気に入りはここに入れない**。「残したい」と「読み終えた」は両立するので、
+/// 同じ3択に混ぜると「未読のお気に入り」が見られなくなる。
+/// 星は別の軸（`HomeScreen` の favoriteOnly）として重ねがけする
 private enum HomeFilter: CaseIterable {
-    case inbox, favorite, archived
+    case inbox, archived
 
     func matches(_ item: StashItem) -> Bool {
         switch self {
         case .inbox: return !item.archived
-        case .favorite: return item.favorite
         case .archived: return item.archived
         }
     }
@@ -50,7 +50,6 @@ private enum HomeFilter: CaseIterable {
     func count(in items: [StashItem]) -> Int {
         switch self {
         case .inbox: return items.filter(\.unread).count
-        case .favorite: return items.filter(\.favorite).count
         case .archived: return items.filter(\.archived).count
         }
     }
@@ -69,6 +68,8 @@ struct HomeScreen: View {
     @ObservedObject private var prefs = AppPrefs.shared
     @EnvironmentObject private var toast: ToastController
     @State private var filter: HomeFilter = .inbox
+    /// 星は未読/アーカイブとは別の軸。選んだタブの中をさらに絞る
+    @State private var favoriteOnly = false
     /// 選択中サービスのラベル。nil は「すべて」。スワイプでもチップでも同じ状態を見る
     @State private var selectedService: String?
 
@@ -80,24 +81,30 @@ struct HomeScreen: View {
 
     private var visibleItems: [StashItem] {
         state.items
-            .filter(filter.matches)
+            .filter { filter.matches($0) && (!favoriteOnly || $0.favorite) }
             .sorted { $0.savedAt > $1.savedAt }
     }
 
-    /// 消えたリンク（他端末との同期など）が選択に残らないようにする
+    /// 消えたリンク（他端末との同期など）が選択に残らないようにする。
+    /// 並びは一覧と同じ新しい順。共有の文面がこの順で並ぶので、画面と食い違うと読みにくい
     private var selectedItems: [StashItem] {
-        state.items.filter { selectedIds.contains($0.id) }
+        visibleItems.filter { selectedIds.contains($0.id) }
     }
 
-    /// 整理の対象になる件数（アーカイブ済みも含む全体で数える）
-    private var staleCount: Int {
-        OldItems.stale(items: state.items, now: nowMillis()).count
+    /// 声をかける根拠になる件数。未アーカイブぶんだけを数えるので、
+    /// 実際に整理シートへ並ぶ件数（アーカイブ済みを含む）とはずれる。
+    /// 声をかける理由は「読まないまま積まれている」ことなので、こちらで判断する
+    private var noticeCount: Int {
+        OldItems.noticeCount(items: state.items, now: nowMillis())
     }
 
     private var showsCleanupNotice: Bool {
-        OldItems.showsNotice(
-            staleCount: staleCount,
+        guard prefs.cleanupNoticeEnabled else { return false }
+        return OldItems.showsNotice(
+            staleCount: noticeCount,
+            totalCount: state.items.count,
             snoozedAt: prefs.cleanupSnoozedAt,
+            dismissCount: prefs.cleanupDismissCount,
             now: nowMillis()
         )
     }
@@ -123,6 +130,10 @@ struct HomeScreen: View {
                         // 中身が無い操作は出さない
                         canAddToCollection: !state.collections.isEmpty,
                         onAddToCollection: { showCollectionPick = true },
+                        // 共有は編集モードを畳まない。共有シートを閉じただけなのか送ったのかは
+                        // こちらから分からず、送らずに戻った人の選択まで消えてしまう。
+                        // 送り先を変えてもう一度、もそのまま続けられる
+                        onShare: { shareLinks(selectedItems) },
                         onDelete: { showDeleteConfirm = true },
                         onExit: exitEditing
                     )
@@ -130,6 +141,7 @@ struct HomeScreen: View {
                     HomeHeader(
                         state: state,
                         filter: $filter,
+                        favoriteOnly: $favoriteOnly,
                         groups: groups,
                         selectedService: $selectedService,
                         onAddLink: onAddLink
@@ -155,7 +167,7 @@ struct HomeScreen: View {
             // 寝かせたままのリンクがたまってきたら整理をすすめる。
             // 上限の知らせと同時に出ると押し付けがましいので、そちらを優先する
             if !editing, remaining > StashRepository.limitWarningRemaining, showsCleanupNotice {
-                CleanupBanner(count: staleCount, onOpen: onCleanup) {
+                CleanupBanner(count: noticeCount, onOpen: onCleanup) {
                     prefs.snoozeCleanupNotice()
                 }
                 .padding(noticePadding)
@@ -167,6 +179,7 @@ struct HomeScreen: View {
                         items: items(for: label, groups: groups),
                         viewMode: prefs.viewMode,
                         filter: filter,
+                        favoriteOnly: favoriteOnly,
                         editing: editing,
                         selectedIds: selectedIds,
                         onItemTap: { item in
@@ -199,8 +212,15 @@ struct HomeScreen: View {
         // 絞り込みを変えたらサービスの選択は外す。ここもページ送りを動かすので、
         // アニメーションを挟まずに切り替える。
         // 絞り込みを変えると選んだものが画面から消えたまま件数だけ残ってしまう。
-        // 見えていないものを消すことになるので、切り替えでは編集モードごと畳む
+        // 見えていないものを消すことになるので、切り替えでは編集モードごと畳む。
+        // 星の絞り込みも同じく画面から行を減らすので、まとめて見張る
         .onChange(of: filter) { _, _ in
+            withoutAnimation {
+                selectedService = nil
+                exitEditing()
+            }
+        }
+        .onChange(of: favoriteOnly) { _, _ in
             withoutAnimation {
                 selectedService = nil
                 exitEditing()
@@ -268,6 +288,7 @@ private struct ItemPage: View {
     let items: [StashItem]
     let viewMode: ViewMode
     let filter: HomeFilter
+    let favoriteOnly: Bool
     let editing: Bool
     let selectedIds: Set<String>
     let onItemTap: (StashItem) -> Void
@@ -365,15 +386,16 @@ private struct ItemPage: View {
         return result
     }
 
+    /// 星で絞った結果の空は、保存が無いのではなく印が無いだけ。
+    /// ここで保存のしかたを案内しても的外れになる
     @ViewBuilder
     private var empty: some View {
-        switch filter {
-        case .inbox:
-            ShareHintCard(onShowGuide: onShowGuide)
-        case .favorite:
+        if favoriteOnly {
             EmptyState(icon: Lucide.star, message: L.s("home_empty_favorites"))
-        case .archived:
+        } else if filter == .archived {
             EmptyState(icon: Lucide.archive, message: L.s("home_empty_archived"))
+        } else {
+            ShareHintCard(onShowGuide: onShowGuide)
         }
     }
 }
@@ -418,6 +440,7 @@ private struct LimitBanner: View {
 private struct HomeHeader: View {
     let state: StashState
     @Binding var filter: HomeFilter
+    @Binding var favoriteOnly: Bool
     let groups: [DomainGroup]
     @Binding var selectedService: String?
     let onAddLink: () -> Void
@@ -449,23 +472,6 @@ private struct HomeHeader: View {
                             selected: filter == .inbox
                         )
                     }
-                    // お気に入りだけ星印にしてある。3つとも文字にすると、
-                    // 隣の表示切替と合わせて小さい端末で横に収まらない
-                    SegmentPill(selected: filter == .favorite, horizontalPadding: 11) {
-                        withoutAnimation { filter = .favorite }
-                    } content: {
-                        LucideIconView(
-                            icon: Lucide.star,
-                            size: 15,
-                            color: filter == .favorite ? Palette.accent700 : Palette.neutral700
-                        )
-                        Text("\(HomeFilter.favorite.count(in: state.items))")
-                            .font(PokkeType.bodySmall)
-                            .foregroundStyle(
-                                (filter == .favorite ? Palette.ink : Palette.neutral700).opacity(0.65)
-                            )
-                    }
-                    .accessibilityLabel(L.s("filter_favorite"))
                     SegmentPill(selected: filter == .archived) {
                         withoutAnimation { filter = .archived }
                     } content: {
@@ -477,6 +483,17 @@ private struct HomeHeader: View {
                     }
                 }
                 .spotlightAnchor(.filters)
+                // 星は別の軸なので、上の囲みの外に出して重ねがけだと分かるようにする。
+                // 中に並べると「未読・アーカイブ・お気に入り」の3択に見えてしまう
+                FavoriteFilterPill(
+                    enabled: favoriteOnly,
+                    // 今のタブの中で何件に絞れるかを出す。全体のお気に入り数を出すと、
+                    // アーカイブ側にあるぶんまで数えて、押しても件数が合わない
+                    count: state.items.filter { filter.matches($0) && $0.favorite }.count
+                ) {
+                    withoutAnimation { favoriteOnly.toggle() }
+                }
+                .padding(.leading, 8)
                 Spacer(minLength: 8)
                 ViewModeToggle()
             }
@@ -495,6 +512,45 @@ private struct HomeHeader: View {
     }
 }
 
+/// お気に入りの絞り込み。未読／アーカイブの選択に重ねて効く。
+///
+/// 左右の絞り込み・表示切替と同じ高さ（`SegmentedPills` の34ptピル＋3ptの内側余白）で
+/// 並べつつ、囲みの外に単独で置いてある。入っているときだけ色が付くので、
+/// 絞り込みが効いたまま忘れられることもない。
+/// 役割がタブではなく入切なので、読み上げにもトグルとして渡す
+private struct FavoriteFilterPill: View {
+    let enabled: Bool
+    let count: Int
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 6) {
+                LucideIconView(
+                    icon: Lucide.star,
+                    size: 15,
+                    color: enabled ? Palette.accent700 : Palette.neutral700
+                )
+                Text("\(count)")
+                    .font(PokkeType.bodySmall)
+                    .foregroundStyle((enabled ? Palette.ink : Palette.neutral700).opacity(0.65))
+            }
+            .padding(.horizontal, 13)
+            .frame(height: 40)
+            .background(Capsule().fill(enabled ? Palette.accent100 : Color.clear))
+            .overlay(
+                Capsule().stroke(enabled ? Palette.accent : Palette.hairline, lineWidth: 1.5)
+            )
+            .contentShape(Capsule())
+            // 選択の見た目は押した瞬間に入れ替える（[SegmentPill] と同じ理由）
+            .transaction { $0.animation = nil }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L.s("filter_favorite"))
+        .accessibilityAddTraits(enabled ? [.isSelected] : [])
+    }
+}
+
 /// 左上のワードマーク。編集モードでも同じ位置に出したままにする
 private struct Wordmark: View {
     var body: some View {
@@ -509,7 +565,7 @@ private struct Wordmark: View {
 }
 
 /// 編集モードのヘッダー。選んだ件数・全選択と、まとめてできること
-/// （コレクションへ追加／削除）を置く。
+/// （コレクションへ追加／共有／削除）を置く。
 ///
 /// 通常時のヘッダーと同じ骨組み（ワードマーク＋右上の丸ボタン → 中段 → 下段）で組んである。
 /// 編集中も「今どのアプリのどの画面にいるか」が変わったわけではないので、
@@ -523,6 +579,7 @@ private struct EditHeader: View {
     @Binding var selectedIds: Set<String>
     let canAddToCollection: Bool
     let onAddToCollection: () -> Void
+    let onShare: () -> Void
     let onDelete: () -> Void
     let onExit: () -> Void
 
@@ -588,7 +645,19 @@ private struct EditHeader: View {
                         filled: false,
                         action: onAddToCollection
                     )
+                    // 3つ並ぶと横幅がぎりぎりになる。まず余白（Spacer）が詰まり、
+                    // それでも足りなければいちばん長いこのラベルから譲る。
+                    // 優先度を上げた共有と削除は最後まで欠けない
+                    .layoutPriority(1)
                 }
+                EditActionPill(
+                    icon: Lucide.share,
+                    label: L.s("edit_share"),
+                    enabled: selectedCount > 0,
+                    filled: false,
+                    action: onShare
+                )
+                .layoutPriority(2)
                 Spacer(minLength: 0)
                 EditActionPill(
                     icon: Lucide.trash,
@@ -597,6 +666,7 @@ private struct EditHeader: View {
                     filled: true,
                     action: onDelete
                 )
+                .layoutPriority(2)
             }
             .padding(.top, 12)
         }
