@@ -249,6 +249,79 @@ final class MetadataFetcherTests: XCTestCase {
         XCTAssertNil(MetadataFetcher.preferring(nil, nil))
     }
 
+    // MARK: - og:image が無いページ
+
+    /// og:image が無ければ twitter:image を使う
+    func testFallsBackToTwitterImage() {
+        let html = """
+        <html><head>
+        <meta property="og:title" content="記事タイトル">
+        <meta name="twitter:image" content="https://example.com/card.jpg">
+        </head></html>
+        """
+        XCTAssertEqual(
+            MetadataFetcher.parse(html: html, baseUrl: "https://example.com/a").imageUrl,
+            "https://example.com/card.jpg"
+        )
+    }
+
+    /// Amazonの主画像は元画像のURLで拾う
+    func testProductImagePrefersTheOriginal() {
+        let html = """
+        <html><body>
+        <img src="https://m.media-amazon.com/images/I/315s._SY445_.jpg"
+             data-old-hires="https://m.media-amazon.com/images/I/7141._SL1500_.jpg"
+             id="landingImage"
+             data-a-dynamic-image="{&quot;https://m.media-amazon.com/images/I/7141._SY342_.jpg&quot;:[342,235]}">
+        </body></html>
+        """
+        XCTAssertEqual(
+            MetadataFetcher.productImage(html),
+            "https://m.media-amazon.com/images/I/7141._SL1500_.jpg"
+        )
+    }
+
+    /// 元画像が無ければ表示候補のうち最大を採る
+    func testProductImageFallsBackToTheLargestCandidate() {
+        let html = """
+        <img id="imgBlkFront" src="https://m.media-amazon.com/images/I/a._SY100_.jpg"
+             data-a-dynamic-image="{&quot;https://m.media-amazon.com/images/I/a._SY342_.jpg&quot;:[342,235],\
+        &quot;https://m.media-amazon.com/images/I/a._SY522_.jpg&quot;:[522,359]}">
+        """
+        XCTAssertEqual(
+            MetadataFetcher.productImage(html),
+            "https://m.media-amazon.com/images/I/a._SY522_.jpg"
+        )
+    }
+
+    /// 主画像はidで場所を決めてから読む（おすすめ商品の画像を掴まない）
+    func testProductImageIsAnchoredToTheMainImageId() {
+        let html = """
+        <img src="https://example.com/sponsored.jpg" data-old-hires="https://example.com/other.jpg">
+        <img id="landingImage" src="https://example.com/main.jpg">
+        """
+        XCTAssertEqual(MetadataFetcher.productImage(html), "https://example.com/main.jpg")
+    }
+
+    /// 商品ページでなければ本文から画像は拾わない
+    func testNoProductImageOnOrdinaryPages() {
+        XCTAssertNil(MetadataFetcher.productImage("<html><body><img src=\"https://example.com/p.jpg\"></body></html>"))
+    }
+
+    /// bodyにog情報を置くページ（YouTubeのコミュニティ投稿）でも読める
+    func testOgTagsInBodyAreRead() {
+        let html = """
+        <html><head><title>YouTube</title></head><body>
+        <title>チャンネル名 さんからの投稿</title>
+        <meta property="og:title" content="チャンネル名 さんからの投稿">
+        <meta property="og:image" content="https://yt3.ggpht.com/abc=s1600">
+        </body></html>
+        """
+        let meta = MetadataFetcher.parse(html: html, baseUrl: "https://www.youtube.com/post/Ugkx")
+        XCTAssertEqual(meta.title, "チャンネル名 さんからの投稿")
+        XCTAssertEqual(meta.imageUrl, "https://yt3.ggpht.com/abc=s1600")
+    }
+
     // MARK: - User-Agent
 
     func testMetaServicesGetTheCrawlerUserAgent() {

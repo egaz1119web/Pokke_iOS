@@ -53,6 +53,13 @@ enum MetadataFetcher {
         "instagram.com", "facebook.com", "threads.net", "threads.com",
     ]
 
+    private static let headEndMark = Array("</head>".utf8)
+    private static let ogImageMark = Array("og:image".utf8)
+
+    /// 本文まで読むことになったときの、もう一つの打ち切り目印（`productImage` が見る主画像）。
+    /// 商品ページは主画像の後ろに関連商品や説明が延々と続くので、そのタグを読み終えたら十分
+    private static let productImageMark = Array("landingimage".utf8)
+
     /// そのURLに使うUA。og:タグを返してくれる方を選ぶ
     static func userAgentFor(_ url: String) -> String {
         guard var host = URLComponents(string: url)?.host?.lowercased() else { return userAgent }
@@ -91,7 +98,31 @@ enum MetadataFetcher {
         // oEmbedだけで揃うことは少ない（Xはサムネイルを返さない、YouTubeは概要を返さない）。
         // 足りない項目をHTMLのog:タグで補う
         if let oEmbed, oEmbed.isComplete { return oEmbed }
-        return preferring(oEmbed, await fetchHtml(url))
+
+        var html = await fetchHtml(url, userAgent: nil)
+        // 何も取れなかったときだけ、もう一方のUAでもう一度だけ試す。
+        //
+        // どちらのUAを使うかはホスト名で決め打ちしているので、
+        // 一覧に無いサービスがクローラにしかog:タグを返さない場合や、
+        // 逆にクローラを弾くようになった場合に、こちらの一覧が古いまま
+        // 「タイトルもサムネイルも出ない」が続いてしまう。
+        // 空振りの1件だけ払えば、その場で拾い直せる
+        if hasNothing(html) {
+            let alternate = alternateUserAgent(userAgentFor(url))
+            html = preferring(html, await fetchHtml(url, userAgent: alternate))
+        }
+        return preferring(oEmbed, html)
+    }
+
+    /// 取りに行ったのに手がかりが1つも無い状態。UAを変えて試し直す合図に使う
+    private static func hasNothing(_ meta: Metadata?) -> Bool {
+        guard let meta else { return true }
+        return meta.title == nil && meta.imageUrl == nil
+    }
+
+    /// `current` と対になるUA。ブラウザで駄目ならクローラ、その逆も試す
+    private static func alternateUserAgent(_ current: String) -> String {
+        current == crawlerUserAgent ? userAgent : crawlerUserAgent
     }
 
     /// [primary] を優先し、欠けている項目だけ [fallback] から補う
@@ -108,12 +139,15 @@ enum MetadataFetcher {
 
     // MARK: - 取得
 
-    private static func fetchHtml(_ startUrl: String) async -> Metadata? {
+    /// `userAgent` に nil を渡すと、辿った先のホストごとに選び直す（通常の取得）。
+    /// 指定したときはリダイレクト先でもそのUAを通す（もう一方のUAでの試し直し）
+    private static func fetchHtml(_ startUrl: String, userAgent: String?) async -> Metadata? {
         guard let (data, finalUrl) = await load(
             startUrl,
             accept: "text/html",
             limit: maxBytes,
-            stopAtHeadEnd: true
+            stopAtHeadEnd: true,
+            userAgent: userAgent
         ) else { return nil }
         // 文字コード宣言はここでは見ず、UTF-8として読めない分は捨てて解釈する。
         // 必要なのは og: メタタグと <title> だけなので実害は小さい
@@ -125,24 +159,30 @@ enum MetadataFetcher {
             endpoint,
             accept: "application/json",
             limit: maxJsonBytes,
-            stopAtHeadEnd: false
+            stopAtHeadEnd: false,
+            userAgent: nil
         ) else { return nil }
         return parseOEmbed(String(decoding: data, as: UTF8.self))
     }
 
     /// リダイレクトを自前で辿りつつ本文の先頭だけ読む。
-    /// `stopAtHeadEnd` が真なら `</head>` を見つけた時点で打ち切る。
+    ///
+    /// `stopAtHeadEnd` が真なら、`</head>` までに og:image が出ていた時点で打ち切る。
+    /// 出ていなければ本文まで読み進める（Android版 `readHead` と同じ理由 —
+    /// YouTubeのコミュニティ投稿は og: も `<title>` も body 側にあり、
+    /// Amazonは og: を出さず主画像のimgタグしか手がかりが無い）。
     private static func load(
         _ startUrl: String,
         accept: String,
         limit: Int,
-        stopAtHeadEnd: Bool
+        stopAtHeadEnd: Bool,
+        userAgent: String?
     ) async -> (Data, String)? {
         var current = startUrl
         for _ in 0..<maxRedirects {
             guard let url = URL(string: current) else { return nil }
             var request = URLRequest(url: url)
-            request.setValue(userAgentFor(current), forHTTPHeaderField: "User-Agent")
+            request.setValue(userAgent ?? userAgentFor(current), forHTTPHeaderField: "User-Agent")
             request.setValue(accept, forHTTPHeaderField: "Accept")
             request.setValue("ja,en;q=0.8", forHTTPHeaderField: "Accept-Language")
 
@@ -166,11 +206,28 @@ enum MetadataFetcher {
                 }
                 var data = Data()
                 data.reserveCapacity(min(limit, 64 * 1024))
+                // head を抜けたあとに探す目印。主画像のタグを読み終えたらそこで止める
+                var lookForHeadEnd = stopAtHeadEnd
+                var lookForImageTag = false
+                var insideImageTag = false
                 for try await byte in bytes {
                     data.append(byte)
                     if data.count >= limit { break }
-                    // og:タグは head 内にしか無いので、body を丸ごと落とす必要がない
-                    if stopAtHeadEnd, byte == UInt8(ascii: ">"), data.hasHeadEndSuffix { break }
+                    if byte == UInt8(ascii: ">") {
+                        if lookForHeadEnd, data.hasSuffix(asciiLowercased: headEndMark) {
+                            // og:image が head に出ていれば、これ以上落とす必要はない
+                            if data.contains(asciiLowercased: ogImageMark) { break }
+                            lookForHeadEnd = false
+                            lookForImageTag = true
+                        } else if insideImageTag {
+                            break
+                        }
+                        continue
+                    }
+                    if lookForImageTag, !insideImageTag,
+                       data.hasSuffix(asciiLowercased: productImageMark) {
+                        insideImageTag = true
+                    }
                 }
                 bytes.task.cancel()
                 return (data, http.url?.absoluteString ?? current)
@@ -293,7 +350,13 @@ enum MetadataFetcher {
             options: [.caseInsensitive, .dotMatchesLineSeparators]
         )?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let image = metaContent(html, property: "og:image").flatMap { raw -> String? in
+        // og:image → twitter:image → 本文の主画像、の順に譲る。
+        // Amazonのように og: を1つも出さない作りのページがあり、
+        // そこでは本文のimgタグだけが手がかりになる
+        let rawImage = metaContent(html, property: "og:image")
+            ?? metaContent(html, property: "twitter:image")
+            ?? productImage(html)
+        let image = rawImage.flatMap { raw -> String? in
             // 署名付きURLの &amp; など、クエリ文字列中のエンティティも展開してから解決する
             URL(string: unescape(raw), relativeTo: URL(string: baseUrl))?.absoluteString
         }
@@ -320,6 +383,61 @@ enum MetadataFetcher {
         }
 
         return Metadata(title: title, siteName: siteName, imageUrl: image, description: description)
+    }
+
+    /// 商品ページの主画像。og:・twitter: のどちらも無いときの最後の手段。
+    ///
+    /// Amazonは og: タグを1つも出さず、主画像は本文の `<img id="landingImage">`
+    /// （本は `imgBlkFront`）にしか無い。しかもそのimgは `</head>` のはるか後ろにある。
+    ///
+    /// 拾う順は 元画像(data-old-hires) → 表示候補のうち最大 → src。
+    /// 一覧のサムネイルは拡大もされるので、小さい表示用より元画像を優先する。
+    ///
+    /// **必ずidで場所を決めてから読む**。ページ全体から最初のimgを拾うと、
+    /// おすすめ商品の画像を掴んで別の商品が出てしまう
+    static func productImage(_ html: String) -> String? {
+        guard let tag = firstMatch(
+            in: html,
+            pattern: "(<img[^>]*id=[\"'](?:landingImage|imgBlkFront)[\"'][^>]*>)",
+            options: [.caseInsensitive]
+        ) else { return nil }
+
+        if let hires = firstMatch(
+            in: tag,
+            pattern: "data-old-hires=[\"']([^\"']+)[\"']",
+            options: [.caseInsensitive]
+        )?.nilIfBlank {
+            return hires
+        }
+        if let json = firstMatch(
+            in: tag,
+            pattern: "data-a-dynamic-image=[\"'](\\{.*?\\})[\"']",
+            options: [.caseInsensitive, .dotMatchesLineSeparators]
+        ), let largest = largestImage(unescape(json)) {
+            return largest
+        }
+        return firstMatch(
+            in: tag,
+            pattern: "\\ssrc=[\"']([^\"']+)[\"']",
+            options: [.caseInsensitive]
+        )?.nilIfBlank
+    }
+
+    /// `{"url": [幅, 高さ], …}` の形から、いちばん幅の広いものを選ぶ
+    private static func largestImage(_ json: String) -> String? {
+        guard let data = json.data(using: .utf8),
+              let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        else { return nil }
+        var best: String?
+        var bestWidth = -1
+        for (url, size) in object {
+            let width = (size as? [Any])?.first as? Int ?? 0
+            if width > bestWidth {
+                bestWidth = width
+                best = url
+            }
+        }
+        return best
     }
 
     /// Instagramのog:descriptionに付く定型の前置きを落として、キャプション本文だけにする。
@@ -444,15 +562,43 @@ enum MetadataFetcher {
 }
 
 private extension Data {
-    /// 末尾が `</head>` か（`</HEAD>` のような大文字表記も拾う）
-    var hasHeadEndSuffix: Bool {
-        let needle = Array("</head>".utf8)
+    /// 末尾が `needle` か。`</HEAD>` のような大文字表記も拾えるようASCII小文字化して比べる
+    func hasSuffix(asciiLowercased needle: [UInt8]) -> Bool {
         guard count >= needle.count else { return false }
-        let tail = suffix(needle.count)
-        return zip(tail, needle).allSatisfy { lhs, rhs in
-            (lhs >= 65 && lhs <= 90 ? lhs + 32 : lhs) == rhs
+        var index = self.index(endIndex, offsetBy: -needle.count)
+        for expected in needle {
+            if self[index].asciiLowercased != expected { return false }
+            index = self.index(after: index)
         }
+        return true
     }
+
+    /// どこかに `needle` を含むか（同じくASCII小文字化して比べる）
+    func contains(asciiLowercased needle: [UInt8]) -> Bool {
+        guard count >= needle.count, let first = needle.first else { return false }
+        var start = startIndex
+        let last = index(endIndex, offsetBy: -needle.count)
+        while start <= last {
+            if self[start].asciiLowercased == first {
+                var index = start
+                var matched = true
+                for expected in needle {
+                    if self[index].asciiLowercased != expected {
+                        matched = false
+                        break
+                    }
+                    index = self.index(after: index)
+                }
+                if matched { return true }
+            }
+            start = index(after: start)
+        }
+        return false
+    }
+}
+
+private extension UInt8 {
+    var asciiLowercased: UInt8 { self >= 65 && self <= 90 ? self + 32 : self }
 }
 
 private extension String {
