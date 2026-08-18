@@ -12,6 +12,7 @@
 		1A2B3C4D5E6F000000000082 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000072 /* GoogleSignIn */; };
 		1A2B3C4D5E6F000000000083 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000073 /* GoogleMobileAds */; };
 		1A2B3C4D5E6F000000000084 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000074 /* GoogleUserMessagingPlatform */; };
+		1A2B3C4D5E6F000000000086 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */; };
 		1A2B3C4D5E6F000000000085 /* PokkeShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000021 /* PokkeShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -98,6 +99,7 @@
 			files = (
 				1A2B3C4D5E6F000000000080 /* FirebaseAuth in Frameworks */,
 				1A2B3C4D5E6F000000000081 /* FirebaseFirestore in Frameworks */,
+				1A2B3C4D5E6F000000000086 /* FirebaseCrashlytics in Frameworks */,
 				1A2B3C4D5E6F000000000082 /* GoogleSignIn in Frameworks */,
 				1A2B3C4D5E6F000000000083 /* GoogleMobileAds in Frameworks */,
 				1A2B3C4D5E6F000000000084 /* GoogleUserMessagingPlatform in Frameworks */,
@@ -153,6 +155,7 @@
 				1A2B3C4D5E6F000000000016 /* Frameworks */,
 				1A2B3C4D5E6F000000000017 /* Resources */,
 				1A2B3C4D5E6F000000000018 /* Embed Foundation Extensions */,
+				1A2B3C4D5E6F000000000019 /* Upload dSYM to Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -167,6 +170,7 @@
 			packageProductDependencies = (
 				1A2B3C4D5E6F000000000070 /* FirebaseAuth */,
 				1A2B3C4D5E6F000000000071 /* FirebaseFirestore */,
+				1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */,
 				1A2B3C4D5E6F000000000072 /* GoogleSignIn */,
 				1A2B3C4D5E6F000000000073 /* GoogleMobileAds */,
 				1A2B3C4D5E6F000000000074 /* GoogleUserMessagingPlatform */,
@@ -294,6 +298,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		1A2B3C4D5E6F000000000019 /* Upload dSYM to Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Upload dSYM to Crashlytics";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# クラッシュの行番号を出すには dSYM が要る。SPMのチェックアウト先にある\n# Crashlytics の run スクリプトへ渡す。dSYMが無いビルド（シミュレータ等）は素通り。\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1A2B3C4D5E6F000000000015 /* Sources */ = {
@@ -607,6 +631,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1A2B3C4D5E6F000000000060 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A2B3C4D5E6F000000000060 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 		1A2B3C4D5E6F000000000072 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

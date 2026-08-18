@@ -1,4 +1,5 @@
 import FirebaseCore
+import FirebaseCrashlytics
 import SwiftUI
 import UserNotifications
 
@@ -10,6 +11,13 @@ struct PokkeApp: App {
         // 置かれている時だけ初期化する。未設定なら設定画面に案内が出る（Android版と同じ挙動）
         if Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil {
             FirebaseApp.configure()
+            // 開発中のクラッシュは自分で見えているので送らない。混ざると
+            // 「配信版で何が起きているか」が読めなくなる（Android版と同じ切り分け）
+            #if DEBUG
+            Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
+            #else
+            Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+            #endif
         }
         StashRepository.shared.initialize()
         AuthService.shared.restoreSession()

@@ -411,7 +411,9 @@ enum MetadataFetcher {
         }
         if let json = firstMatch(
             in: tag,
-            pattern: "data-a-dynamic-image=[\"'](\\{.*?\\})[\"']",
+            // 波かっこは文字クラスで書く（Android版と同じ理由 —
+            // エスケープした波かっこは端末の正規表現エンジンに拒否されることがある）
+            pattern: "data-a-dynamic-image=[\"']([{].*?[}])[\"']",
             options: [.caseInsensitive, .dotMatchesLineSeparators]
         ), let largest = largestImage(unescape(json)) {
             return largest
