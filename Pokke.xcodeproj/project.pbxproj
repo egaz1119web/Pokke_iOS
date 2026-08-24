@@ -12,8 +12,8 @@
 		1A2B3C4D5E6F000000000082 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000072 /* GoogleSignIn */; };
 		1A2B3C4D5E6F000000000083 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000073 /* GoogleMobileAds */; };
 		1A2B3C4D5E6F000000000084 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000074 /* GoogleUserMessagingPlatform */; };
-		1A2B3C4D5E6F000000000086 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */; };
 		1A2B3C4D5E6F000000000085 /* PokkeShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000021 /* PokkeShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		1A2B3C4D5E6F000000000086 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -309,13 +309,14 @@
 			inputPaths = (
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
 				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+				"$(SRCROOT)/Pokke/GoogleService-Info.plist",
 			);
 			name = "Upload dSYM to Crashlytics";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# クラッシュの行番号を出すには dSYM が要る。SPMのチェックアウト先にある\n# Crashlytics の run スクリプトへ渡す。dSYMが無いビルド（シミュレータ等）は素通り。\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+			shellScript = "# クラッシュの行番号を出すには dSYM が要る。SPMのチェックアウト先にある\n# Crashlytics の run スクリプトへ渡す。\n#\n# GoogleService-Info.plist は -gsp で明示的に渡すこと。省略すると\n# ビルド環境によっては見つけられず\n#   error: Could not get GOOGLE_APP_ID in Google Services file from build environment\n# でビルドごと落ちる（DerivedDataの場所で挙動が変わる）。\nGSP=\"${SRCROOT}/Pokke/GoogleService-Info.plist\"\nif [ ! -f \"$GSP\" ]; then\n  echo \"note: GoogleService-Info.plist が無いのでdSYMのアップロードはしない\"\n  exit 0\nfi\nRUN=\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nif [ ! -x \"$RUN\" ]; then\n  echo \"note: Crashlytics の run スクリプトが見つからないのでdSYMのアップロードはしない\"\n  exit 0\nfi\n\"$RUN\" -gsp \"$GSP\" -p ios\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -424,7 +425,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pokke/Pokke.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W2MGTX4423;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -435,7 +436,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.egaz.stash;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -450,7 +451,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pokke/Pokke.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W2MGTX4423;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -461,7 +462,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.egaz.stash;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -474,7 +475,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = PokkeShare/PokkeShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W2MGTX4423;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PokkeShare/Info.plist;
@@ -483,7 +484,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.egaz.stash.Share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -497,7 +498,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = PokkeShare/PokkeShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W2MGTX4423;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PokkeShare/Info.plist;
@@ -506,7 +507,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.egaz.stash.Share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -632,11 +633,6 @@
 			package = 1A2B3C4D5E6F000000000060 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
 		};
-		1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1A2B3C4D5E6F000000000060 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCrashlytics;
-		};
 		1A2B3C4D5E6F000000000072 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1A2B3C4D5E6F000000000061 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
@@ -651,6 +647,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1A2B3C4D5E6F000000000063 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */;
 			productName = GoogleUserMessagingPlatform;
+		};
+		1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A2B3C4D5E6F000000000060 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
