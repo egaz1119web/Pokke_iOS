@@ -6,7 +6,7 @@ Android版 [RELEASE.md](../../AndroidStudioProjects/Stash/RELEASE.md) のiOS版�
 
 ## 済んでいること（コード側）
 
-- [x] Firebase（Googleログイン + Firestore同期）— `Pokke/GoogleService-Info.plist` 配置済み、
+- [x] Firebase（Analytics + Googleログイン + Firestore同期）— `Pokke/GoogleService-Info.plist` 配置済み、
       URLスキーム登録済み、認証フロー起動まで確認済み
 - [x] AdMob 本番ID（アプリID・ネイティブ広告ユニットID）に差し替え済み
 - [x] `SKAdNetworkItems`（Google公式50件、`developers.google.com/admob/ios/ios14` より2回取得し
@@ -119,12 +119,12 @@ Play「データセーフティ」申告と揃えてある。ASCの質問フォ�
 | 識別子（デバイスID） | 分析・サードパーティ広告・開発者広告 | Yes | **Yes** |
 | 位置情報（おおまかな位置情報） | 分析・サードパーティ広告・開発者広告 | Yes | No |
 | 診断（クラッシュデータ・パフォーマンスデータ・その他診断データ） | 分析 | 一部Yes/一部No（下記参照） | No |
-| 製品とのやり取り（広告の視聴・操作） | 分析・広告 | Yes | No |
+| 製品とのやり取り（アプリ機能・広告の視聴・操作） | 分析・広告 | Yes | No |
 
-下3つ（デバイスID・位置情報・診断）は **AdMob SDKが独自に収集するもの**
-（`GoogleMobileAds.xcframework/PrivacyInfo.xcprivacy` に開発元が事前宣言済みの内容をそのまま転記）。
-アプリのコードが直接集めているわけではないが、申告上は「アプリに含まれるかどうか」で聞かれるので
-含める。
+デバイスID・位置情報・診断・製品とのやり取りは、AdMob／Firebase Analytics等のSDKが
+収集するものを含む。アプリが送る独自イベントはURL・タイトル・検索語・タグ名・
+コレクション名を含まず、機能名・成否・件数だけを分析目的で送る。
+SDK同梱の `PrivacyInfo.xcprivacy` と実装の両方を踏まえてApp Store Connectへ申告する。
 
 **トラッキングは「あり」** — AdMobのデバイスID収集がトラッキングに該当するため
 （Android版でも「広告ID」を同様の理由でデータセーフティに記載済み）。ただし本アプリ自体は

@@ -30,7 +30,9 @@ func reminderTimeText(_ millis: EpochMillis) -> String {
 func openLink(_ item: StashItem) {
     StashRepository.shared.markOpened(id: item.id)
     guard let url = URL(string: item.url) else { return }
-    UIApplication.shared.open(url)
+    UIApplication.shared.open(url) { opened in
+        if opened { Task { @MainActor in AppAnalytics.bookmarkOpened() } }
+    }
 }
 
 /// 他のアプリへリンクを共有する。送信先はシステムの共有シートで利用者が選ぶ
@@ -38,6 +40,7 @@ func openLink(_ item: StashItem) {
 func shareLink(_ item: StashItem, from sourceRect: CGRect? = nil) {
     guard let url = URL(string: item.url) else { return }
     presentShareSheet(activityItems: [item.title, url], from: sourceRect)
+    AppAnalytics.bookmarksShared(count: 1)
 }
 
 /// 選んだぶんをまとめて共有する。
@@ -57,6 +60,7 @@ func shareLinks(_ items: [StashItem], from sourceRect: CGRect? = nil) {
     // どこまでが1つのリンクなのかが分かるようにする
     let text = items.map { "\($0.title)\n\($0.url)" }.joined(separator: "\n\n")
     presentShareSheet(activityItems: [text], from: sourceRect)
+    AppAnalytics.bookmarksShared(count: items.count)
 }
 
 @MainActor

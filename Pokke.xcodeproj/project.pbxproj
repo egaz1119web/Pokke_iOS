@@ -14,6 +14,7 @@
 		1A2B3C4D5E6F000000000084 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000074 /* GoogleUserMessagingPlatform */; };
 		1A2B3C4D5E6F000000000085 /* PokkeShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000021 /* PokkeShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1A2B3C4D5E6F000000000086 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */; };
+		1A2B3C4D5E6F000000000087 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F000000000076 /* FirebaseAnalytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,6 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A2B3C4D5E6F000000000087 /* FirebaseAnalytics in Frameworks */,
 				1A2B3C4D5E6F000000000080 /* FirebaseAuth in Frameworks */,
 				1A2B3C4D5E6F000000000081 /* FirebaseFirestore in Frameworks */,
 				1A2B3C4D5E6F000000000086 /* FirebaseCrashlytics in Frameworks */,
@@ -168,6 +170,7 @@
 			);
 			name = Pokke;
 			packageProductDependencies = (
+				1A2B3C4D5E6F000000000076 /* FirebaseAnalytics */,
 				1A2B3C4D5E6F000000000070 /* FirebaseAuth */,
 				1A2B3C4D5E6F000000000071 /* FirebaseFirestore */,
 				1A2B3C4D5E6F000000000075 /* FirebaseCrashlytics */,
@@ -437,6 +440,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.6.0;
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.egaz.stash;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -463,6 +467,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.6.0;
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.egaz.stash;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -652,6 +657,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1A2B3C4D5E6F000000000060 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		1A2B3C4D5E6F000000000076 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A2B3C4D5E6F000000000060 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

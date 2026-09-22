@@ -124,6 +124,20 @@ struct SearchScreen: View {
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
         .task { await AiAssistant.shared.probeIfNeeded() }
+        .task(id: SearchAnalyticsInput(query: query, tag: selectedTag)) {
+            let length = query.trimmingCharacters(in: .whitespacesAndNewlines).count
+            guard length > 0 || selectedTag != nil else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(800))
+            } catch {
+                return
+            }
+            AppAnalytics.bookmarksSearched(
+                queryLength: length,
+                resultCount: results.count,
+                tagFiltered: selectedTag != nil
+            )
+        }
         .sheet(isPresented: $showAskAi) {
             AskAiSheet(
                 scopeLabel: L.s("ai_scope_all_links", state.items.count),
@@ -138,6 +152,12 @@ struct SearchScreen: View {
             )
         }
     }
+}
+
+/// task(id:) のキャンセル判定にだけ使う。検索語そのものは分析イベントへ渡さない。
+private struct SearchAnalyticsInput: Hashable {
+    let query: String
+    let tag: String?
 }
 
 /// 白地のピル型の検索欄。フォーカスでテラコッタの枠になる

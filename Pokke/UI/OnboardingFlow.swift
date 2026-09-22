@@ -15,6 +15,7 @@ private let practiceUrl = "https://pokke.op-sarada.workers.dev/"
 /// 保存できたら祝いのページは挟まず、そのままホームへ抜ける（[onFinish] に
 /// 保存された物を渡す）。実物の一覧が出てから、その上でスポットライトの案内を続ける。
 struct OnboardingFlow: View {
+    let isFirstRun: Bool
     /// 案内の終わり。練習で保存できた場合はその1件を渡す
     let onFinish: (StashItem?) -> Void
 
@@ -47,6 +48,7 @@ struct OnboardingFlow: View {
                 finishPractice(with: added)
             }
         }
+        .onAppear { AppAnalytics.onboardingStarted(firstRun: isFirstRun) }
     }
 
     // MARK: - ヘッダー
@@ -67,6 +69,11 @@ struct OnboardingFlow: View {
                 Spacer(minLength: 0)
                 // 最後の1枚は共有シートを開かないと先へ進まないので、どの枚でも抜け道を残す
                 Button {
+                    AppAnalytics.onboardingFinished(
+                        firstRun: isFirstRun,
+                        completed: false,
+                        lastStep: page == 0 ? "welcome" : "share"
+                    )
                     onFinish(nil)
                 } label: {
                     Text(L.s("onboarding_skip"))
@@ -159,6 +166,11 @@ struct OnboardingFlow: View {
 
     private func finishPractice(with item: StashItem) {
         waitingForShare = false
+        AppAnalytics.onboardingFinished(
+            firstRun: isFirstRun,
+            completed: true,
+            lastStep: "share"
+        )
         onFinish(item)
     }
 }

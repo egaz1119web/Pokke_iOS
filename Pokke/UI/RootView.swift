@@ -34,6 +34,15 @@ private enum RootTab: Int, CaseIterable, Identifiable {
         case .settings: return Lucide.settings
         }
     }
+
+    var analyticsName: String {
+        switch self {
+        case .home: "home"
+        case .collections: "collections"
+        case .search: "search"
+        case .settings: "settings"
+        }
+    }
 }
 
 struct RootView: View {
@@ -103,7 +112,7 @@ struct RootView: View {
         // 案内は重ねるのではなく画面を占有させる。共有シートを実際に開いて練習する
         // 手順があり、後ろの一覧が透けているとどこを見ればよいのか分からなくなる
         .fullScreenCover(isPresented: $showGuide) {
-            OnboardingFlow { savedItem in
+            OnboardingFlow(isFirstRun: AppPrefs.shared.needsOnboarding) { savedItem in
                 showGuide = false
                 AppPrefs.shared.markOnboarded()
                 if let savedItem { startTour(savedItemId: savedItem.id) }
@@ -111,16 +120,31 @@ struct RootView: View {
         }
         .sheet(isPresented: $showAdd) {
             SaveLinkSheet { url in
+                let wasAlreadySaved = StashRepository.shared.precheckAddLink(url) == .alreadySaved
                 let result = StashRepository.shared.addLink(url)
-                if case .saved = result { toast.show(L.s("toast_saved")) }
+                switch result {
+                case .saved:
+                    AppAnalytics.bookmarkSaved(
+                        source: "manual_entry",
+                        newItem: !wasAlreadySaved,
+                        assignedToCollection: false
+                    )
+                    toast.show(L.s("toast_saved"))
+                case .invalidUrl:
+                    AppAnalytics.bookmarkSaveFailed(source: "manual_entry", reason: "invalid_url")
+                case .limitReached:
+                    AppAnalytics.bookmarkSaveFailed(source: "manual_entry", reason: "limit_reached")
+                }
                 return result
             }
+            .onAppear { AppAnalytics.screen("add_bookmark") }
         }
         .sheet(isPresented: $showCleanup) {
             // 開いた時点の一覧で固定する。開いている間に共有拡張やクラウド同期で
             // 中身が入れ替わると、チェックした行と消える行がずれる
             CleanupSheet(items: OldItems.stale(items: state.items, now: nowMillis()))
                 .environmentObject(toast)
+                .onAppear { AppAnalytics.screen("cleanup") }
         }
         .sheet(item: Binding(
             get: { detailItem },
@@ -128,11 +152,13 @@ struct RootView: View {
         )) { item in
             DetailSheet(item: item, collections: state.collections, allItems: state.items)
                 .environmentObject(toast)
+                .onAppear { AppAnalytics.screen("bookmark_detail") }
         }
         // 端末内AIが使えるかは、入口を出す前に分かっている方がよい。
         // 画面に着いてから調べると、AI欄が一拍遅れて生えてくる
         .task { await AiAssistant.shared.probeIfNeeded() }
         .onAppear {
+            AppAnalytics.screen(tab.analyticsName)
             if AppPrefs.shared.needsOnboarding { showGuide = true }
             // 通知の予約はOS側に残っているが、消えたリンクのぶんが混ざっていることがある
             syncReminders()
@@ -149,6 +175,10 @@ struct RootView: View {
                 // 設定アプリでApple Intelligenceを入れて戻ってきた場合に拾う
                 Task { await AiAssistant.shared.recheck() }
             }
+        }
+        .onChange(of: tab) { _, next in AppAnalytics.screen(next.analyticsName) }
+        .onChange(of: openedCollectionId) { _, id in
+            if id != nil { AppAnalytics.screen("collection_detail") }
         }
         // 予約は保存内容の写しなので、リマインダーが動いたら必ず取り直す。
         // 自分で設定したときだけでなく、クラウド同期で別端末から入ってきた分や

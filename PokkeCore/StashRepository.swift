@@ -200,6 +200,7 @@ final class StashRepository: ObservableObject {
             s.items.removeAll { $0.id == id }
             s.deletedIds[id] = now
         }
+        AppAnalytics.bookmarkAction("delete")
     }
 
     /// まとめて削除する。1件ずつ `deleteItem` を呼ぶとその都度ファイルへ書き出すことになるので、
@@ -212,6 +213,7 @@ final class StashRepository: ObservableObject {
             s.items.removeAll { targets.contains($0.id) }
             for id in targets { s.deletedIds[id] = now }
         }
+        AppAnalytics.bulkAction("delete", count: targets.count)
     }
 
     /// まとめてコレクションへ入れる。`collectionId` が nil なら未分類へ戻す。
@@ -228,6 +230,10 @@ final class StashRepository: ObservableObject {
                 s.items[index].updatedAt = now
             }
         }
+        AppAnalytics.bulkAction(
+            collectionId == nil ? "remove_from_collection" : "assign_collection",
+            count: targets.count
+        )
     }
 
     /// リマインダーの設定・解除。`at` が nil なら解除。
@@ -240,6 +246,7 @@ final class StashRepository: ObservableObject {
             s.items[index].remindAt = at
             s.items[index].updatedAt = nowMillis()
         }
+        AppAnalytics.bookmarkAction("reminder", enabled: at != nil)
     }
 
     /// お気に入りの出し入れ。立っている間は一括整理の対象から外れる
@@ -249,6 +256,7 @@ final class StashRepository: ObservableObject {
             s.items[index].favorite = favorite
             s.items[index].updatedAt = nowMillis()
         }
+        AppAnalytics.bookmarkAction("favorite", enabled: favorite)
     }
 
     func setArchived(id: String, archived: Bool) {
@@ -257,6 +265,7 @@ final class StashRepository: ObservableObject {
             s.items[index].archived = archived
             s.items[index].updatedAt = nowMillis()
         }
+        AppAnalytics.bookmarkAction("archive", enabled: archived)
     }
 
     /// ブラウザで開いた＝再訪としてカウント
@@ -281,6 +290,7 @@ final class StashRepository: ObservableObject {
             updatedAt: nowMillis()
         )
         mutate { $0.collections.append(collection) }
+        AppAnalytics.collectionAction("create")
         return collection
     }
 
@@ -291,6 +301,7 @@ final class StashRepository: ObservableObject {
             s.collections[index] = updated
             s.collections[index].updatedAt = nowMillis()
         }
+        AppAnalytics.collectionAction("update")
     }
 
     func deleteCollection(id: String) {
@@ -303,6 +314,7 @@ final class StashRepository: ObservableObject {
             }
             s.deletedIds[id] = now
         }
+        AppAnalytics.collectionAction("delete")
     }
 
     /// http(s)のURLだけ受け付け、httpはhttpsへ格上げする

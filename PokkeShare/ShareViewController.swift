@@ -46,14 +46,29 @@ final class ShareViewController: UIViewController {
 
     @MainActor
     private func handleShared(_ text: String?) async {
-        guard let text, case let .ready(normalized) = StashRepository.shared.precheckAddLink(text) else {
-            await finish(with: text.map { StashRepository.shared.addLink($0) } ?? .invalidUrl)
+        guard let text else {
+            recordSave(result: .invalidUrl, newItem: false, assignedToCollection: false)
+            await finish(with: .invalidUrl)
+            return
+        }
+
+        let precheck = StashRepository.shared.precheckAddLink(text)
+        guard case let .ready(normalized) = precheck else {
+            let result = StashRepository.shared.addLink(text)
+            recordSave(
+                result: result,
+                newItem: precheck != .alreadySaved,
+                assignedToCollection: false
+            )
+            await finish(with: result)
             return
         }
 
         let collections = StashRepository.shared.state.collections
         guard !collections.isEmpty else {
-            await finish(with: StashRepository.shared.addLink(normalized))
+            let result = StashRepository.shared.addLink(normalized)
+            recordSave(result: result, newItem: true, assignedToCollection: false)
+            await finish(with: result)
             return
         }
 
@@ -65,6 +80,11 @@ final class ShareViewController: UIViewController {
             guard let self else { return }
             self.dismissPicker()
             let result = StashRepository.shared.addLink(url, collectionId: collectionId)
+            self.recordSave(
+                result: result,
+                newItem: true,
+                assignedToCollection: collectionId != nil
+            )
             Task { @MainActor in await self.finish(with: result) }
         } onCancel: { [weak self] in
             self?.cancel()
@@ -99,6 +119,26 @@ final class ShareViewController: UIViewController {
         extensionContext?.cancelRequest(
             withError: NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError)
         )
+    }
+
+    @MainActor
+    private func recordSave(
+        result: AddLinkResult,
+        newItem: Bool,
+        assignedToCollection: Bool
+    ) {
+        switch result {
+        case .saved:
+            AppAnalytics.bookmarkSaved(
+                source: "ios_share_extension",
+                newItem: newItem,
+                assignedToCollection: assignedToCollection
+            )
+        case .invalidUrl:
+            AppAnalytics.bookmarkSaveFailed(source: "ios_share_extension", reason: "invalid_url")
+        case .limitReached:
+            AppAnalytics.bookmarkSaveFailed(source: "ios_share_extension", reason: "limit_reached")
+        }
     }
 
     @MainActor

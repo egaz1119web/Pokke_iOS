@@ -237,7 +237,7 @@ struct SettingsScreen: View {
         guard let rootViewController = AuthService.rootViewController() else { return }
         loading = true
         message = nil
-        apply(await auth.signInWithGoogle(presenting: rootViewController))
+        apply(await auth.signInWithGoogle(presenting: rootViewController), method: "google")
         loading = false
     }
 
@@ -246,11 +246,15 @@ struct SettingsScreen: View {
         case let .success(authorization):
             loading = true
             message = nil
-            apply(await auth.signInWithApple(authorization: authorization))
+            apply(await auth.signInWithApple(authorization: authorization), method: "apple")
             loading = false
         case let .failure(error):
             // ユーザーが自分でシートを閉じた場合はGoogleのキャンセル同様、エラー表示はしない
-            if let authError = error as? ASAuthorizationError, authError.code == .canceled { return }
+            if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+                AppAnalytics.signInResult(method: "apple", result: "cancelled")
+                return
+            }
+            AppAnalytics.signInResult(method: "apple", result: "failed")
             message = L.s("sign_in_error_generic", error.localizedDescription)
         }
     }
@@ -278,11 +282,16 @@ struct SettingsScreen: View {
         }
     }
 
-    private func apply(_ result: SignInResult) {
+    private func apply(_ result: SignInResult, method: String) {
         switch result {
-        case .success, .cancelled:
+        case .success:
+            AppAnalytics.signInResult(method: method, result: "success")
+            message = nil
+        case .cancelled:
+            AppAnalytics.signInResult(method: method, result: "cancelled")
             message = nil
         case let .failure(messageKey, detail):
+            AppAnalytics.signInResult(method: method, result: "failed")
             message = L.s(messageKey, detail ?? L.s("error_unknown"))
         }
     }
