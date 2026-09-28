@@ -19,9 +19,13 @@ struct ReminderSection: View {
     private var pending: Bool { ReminderPlan.isPending(item.remindAt, now: nowMillis()) }
 
     /// 通知を切られている案内を出すか。
-    /// 一度断られるとOSは聞き直してくれないので、設定アプリへ送るしかない
+    ///
+    /// 許可が無いだけなら、設定しようとした時点で許可のダイアログが出るので黙っておく。
+    /// 出すのは、実際に設定しようとして断られたときだけ。一度断られると
+    /// OSはもう聞き直してくれず、押しても何も起きないように見えてしまうので、
+    /// 設定アプリへの道をここで示す
     private var showsPermissionNotice: Bool {
-        permissionDenied || scheduler.authorization == .denied
+        permissionDenied
     }
 
     var body: some View {

@@ -205,6 +205,17 @@ enum Lucide {
         "M12 17h.01"
     )
 
+    /// 予定をカレンダーへ
+    static let calendarPlus = icon(
+        "CalendarPlus",
+        "M8 2v4",
+        "M16 2v4",
+        "M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8",
+        "M3 10h18",
+        "M16 19h6",
+        "M19 16v6"
+    )
+
     static let clock = icon("Clock", "M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0", "M12 6v6l4 2")
 
     /// リマインダー

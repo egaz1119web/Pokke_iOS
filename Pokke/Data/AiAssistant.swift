@@ -157,6 +157,26 @@ struct TagSuggestions {
     let tags: [String]
 }
 
+/// カレンダーに入れる予定の構造化出力。
+///
+/// 時刻はあえて受け取らない。モデルは「10/23 発売」のような日付だけの告知にも
+/// 0:00 を付けてくるので、時刻は `CalendarExtract` が本文から読む
+@available(iOS 26.0, *)
+@Generable
+struct CalendarEventDrafts {
+    @Guide(description: "Events whose date is actually written in the link text. Empty if none.", .count(0...5))
+    let events: [CalendarEventDraft]
+}
+
+@available(iOS 26.0, *)
+@Generable
+struct CalendarEventDraft {
+    @Guide(description: "Date in YYYY-MM-DD format")
+    let date: String
+    @Guide(description: "Short event name saying what happens, without account or site names")
+    let name: String
+}
+
 /// 1回のシート表示ぶんの推論エンジン。
 ///
 /// エンジンの確保はそれなりに重いので、シートを開いている間は使い回し、
@@ -202,6 +222,35 @@ final class AiSession {
             return response.content.tags
         } catch {
             log("タグの提案に失敗した", error)
+            throw AiError(failure: .generationFailed)
+        }
+    }
+
+    /// 予定を構造化出力で受け取り、`CalendarExtract.parse` が読む
+    /// 「YYYY-MM-DD | 予定名」の行に直して返す。検証はすべてそちらに任せる。
+    ///
+    /// 予定探しと要約は1回ずつで完結するので、使い回しのセッションではなく毎回新しく作る。
+    /// セッションはやり取りの履歴を抱え込むため、続けて聞くと前の本文まで文脈に積もり、
+    /// 端末内モデルの短い文脈の上限に当たってしまう
+    func findCalendarEvents(prompt: String) async throws -> String {
+        let options = GenerationOptions(temperature: 0.2)
+        do {
+            let response = try await LanguageModelSession().respond(to: prompt, generating: CalendarEventDrafts.self, options: options)
+            return response.content.events.map { "\($0.date) | \($0.name)" }.joined(separator: "\n")
+        } catch {
+            log("予定の読み取りに失敗した", error)
+            throw AiError(failure: .generationFailed)
+        }
+    }
+
+    /// 答えを1回でまとめて受け取る（要約のように途中経過を見せないもの向け）。
+    /// `findCalendarEvents` と同じ理由で毎回新しいセッションで聞く
+    func respond(prompt: String) async throws -> String {
+        let options = GenerationOptions(temperature: 0.2)
+        do {
+            return try await LanguageModelSession().respond(to: prompt, options: options).content
+        } catch {
+            log("生成に失敗した", error)
             throw AiError(failure: .generationFailed)
         }
     }

@@ -23,6 +23,8 @@ struct CollectionsScreen: View {
                     onItemTap: onItemTap,
                     onBrowseLinks: onBrowseLinks
                 )
+                // 別のコレクションを開き直したら検索語は持ち越さない
+                .id(opened.id)
             } else {
                 list
             }
@@ -145,6 +147,8 @@ private struct CollectionDetail: View {
 
     @State private var showEdit = false
     @State private var showAskAi = false
+    @State private var query = ""
+    @FocusState private var searchFocused: Bool
     @ObservedObject private var ai = AiAssistant.shared
     // 表示形式はホームと同じものを見る。同じリンクの見え方が場所で変わらないように
     @ObservedObject private var prefs = AppPrefs.shared
@@ -155,15 +159,26 @@ private struct CollectionDetail: View {
             .sorted { $0.savedAt > $1.savedAt }
     }
 
+    private var results: [StashItem] {
+        items.filter { $0.matches(query: query) }
+    }
+
     var body: some View {
         ZStack {
             ScrollView {
                 LazyVStack(spacing: 10) {
                     header
-                    // 1件も無いうちは切り替えるものが無い
+                    // 空のコレクションでは探すものも切り替えるものも無いので出さない。
+                    // 検索欄と表示切り替えは1行にまとめ、中身が見えるまでの縦幅を詰める
                     if !items.isEmpty {
-                        HStack {
-                            Spacer(minLength: 0)
+                        HStack(spacing: 10) {
+                            SearchField(
+                                query: $query,
+                                focused: $searchFocused,
+                                placeholder: L.s("collection_search_placeholder"),
+                                // 切り替えのピルと高さを揃えて1本の帯に見せる
+                                height: 40
+                            )
                             ViewModeToggle()
                         }
                     }
@@ -173,6 +188,8 @@ private struct CollectionDetail: View {
                     }
                     if items.isEmpty {
                         CollectionEmptyState(collection: collection, onBrowseLinks: onBrowseLinks)
+                    } else if results.isEmpty {
+                        EmptyState(icon: Lucide.search, message: L.s("search_no_results"))
                     } else if prefs.viewMode == .grid {
                         LazyVGrid(
                             columns: [
@@ -181,13 +198,13 @@ private struct CollectionDetail: View {
                             ],
                             spacing: 11
                         ) {
-                            ForEach(items) { item in
+                            ForEach(results) { item in
                                 ItemGridCard(item: item) { onItemTap(item) }
                             }
                         }
                         .padding(.top, 1)
                     } else {
-                        ForEach(items) { item in
+                        ForEach(results) { item in
                             ItemRow(
                                 item: item,
                                 thumbnailSize: 56,
@@ -202,6 +219,7 @@ private struct CollectionDetail: View {
                 .padding(.bottom, bottomContentPadding)
             }
             .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
 
             if showEdit {
                 CollectionDialog(

@@ -15,6 +15,9 @@ struct DetailSheet: View {
     @State private var showReport = false
     @State private var savingImage = false
     @FocusState private var tagFieldFocused: Bool
+    @State private var collectionsExpanded = false
+    /// コレクションを全部並べるのに要した行数。FlowLayoutが実測して知らせてくる
+    @StateObject private var collectionRowCount = FlowRowCount()
 
     // タグ提案は毎回聞きに行くと待たされるだけなので、開いている間だけエンジンを使い回す
     @ObservedObject private var ai = AiAssistant.shared
@@ -69,6 +72,14 @@ struct DetailSheet: View {
                 // コレクション・タグ（整理の話）より前に置く。あとで読むために
                 // 保存しているアプリなので、「いつ読むか」を決める方が先に来る
                 ReminderSection(item: item).padding(.top, 18)
+
+                // 発売日・入荷日のような「その日に何かある」リンク向け。
+                // 読む日を決めるリマインダーと同じ「日付」の話なので、その直後に置く
+                if showsAiEntryPoint(ai.availability) {
+                    if #available(iOS 26.0, *) {
+                        CalendarSection(item: item).padding(.top, 10)
+                    }
+                }
 
                 collectionSection.padding(.top, 18)
                 tagSection.padding(.top, 18)
@@ -222,8 +233,15 @@ struct DetailSheet: View {
                     .foregroundStyle(Palette.neutral600)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                FlowLayout(spacing: 8) {
-                    ForEach(collections) { collection in
+                // 全部並べると本文より長くなるので、既定では1行に畳む。
+                // 入っているコレクションは畳んでも見えるよう先頭に寄せる。
+                // 開閉のチップは検索画面のタグと同じく、列には混ぜず下に置く
+                FlowLayout(
+                    spacing: 8,
+                    maxRows: collectionsExpanded ? nil : 1,
+                    rowCount: collectionRowCount
+                ) {
+                    ForEach(orderedCollections) { collection in
                         CollectionChip(
                             collection: collection,
                             selected: item.collectionId == collection.id
@@ -234,8 +252,21 @@ struct DetailSheet: View {
                         }
                     }
                 }
+                .clipped()
+                // clipped() は絵しか切らない。畳んで見えていないチップを押せないようにする
+                .contentShape(Rectangle())
+
+                if collectionsExpanded || collectionRowCount.rows > 1 {
+                    TagToggleChip(expanded: collectionsExpanded) {
+                        withAnimation(.easeInOut(duration: 0.2)) { collectionsExpanded.toggle() }
+                    }
+                }
             }
         }
+    }
+
+    private var orderedCollections: [StashCollection] {
+        collections.filter { $0.id == item.collectionId } + collections.filter { $0.id != item.collectionId }
     }
 
     private var tagSection: some View {
@@ -460,7 +491,7 @@ private struct SuggestedTagChip: View {
 }
 
 /// アイコン付きのテキストリンク
-private struct TextLink: View {
+struct TextLink: View {
     let text: String
     let icon: Lucide.Icon
     let action: () -> Void

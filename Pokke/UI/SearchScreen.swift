@@ -29,16 +29,10 @@ struct SearchScreen: View {
     }
 
     private var results: [StashItem] {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return state.items
+        state.items
             .filter { item in
-                let matchesQuery = q.isEmpty
-                    || item.title.localizedCaseInsensitiveContains(q)
-                    || item.url.localizedCaseInsensitiveContains(q)
-                    || (item.description?.localizedCaseInsensitiveContains(q) ?? false)
-                    || item.tags.contains { $0.localizedCaseInsensitiveContains(q) }
                 let matchesTag = selectedTag == nil || item.tags.contains(selectedTag!)
-                return matchesQuery && matchesTag
+                return item.matches(query: query) && matchesTag
             }
             .sorted { $0.savedAt > $1.savedAt }
     }
@@ -161,14 +155,17 @@ private struct SearchAnalyticsInput: Hashable {
 }
 
 /// 白地のピル型の検索欄。フォーカスでテラコッタの枠になる
-private struct SearchField: View {
+struct SearchField: View {
     @Binding var query: String
     var focused: FocusState<Bool>.Binding
+    var placeholder: String = L.s("search_placeholder")
+    var height: CGFloat = 50
 
     var body: some View {
-        PillField(focused: focused.wrappedValue) {
+        PillField(focused: focused.wrappedValue, height: height) {
             LucideIconView(icon: Lucide.search, size: 18, color: Palette.neutral500)
-            TextField(L.s("search_placeholder"), text: $query)
+            TextField(placeholder, text: $query)
+                .lineLimit(1)
                 .font(PokkeType.labelLarge)
                 .foregroundStyle(Palette.ink)
                 .tint(Palette.accent)
@@ -283,7 +280,7 @@ struct FlowLayout: Layout {
 }
 
 /// タグ一覧の開閉チップ。[ServiceChip] と同じ高さにしてタグの列に馴染ませる
-private struct TagToggleChip: View {
+struct TagToggleChip: View {
     let expanded: Bool
     let action: () -> Void
 

@@ -79,6 +79,17 @@ struct StashItem: Identifiable, Equatable, Hashable {
         guard let host = URLComponents(string: url)?.host else { return url }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
+
+    /// 検索語がタイトル・URL・説明・タグのどれかに含まれるか。空の語はすべてに合う。
+    /// 全体検索とコレクション内検索で当たり方が食い違わないよう、ここ1か所で決める
+    func matches(query: String) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return q.isEmpty
+            || title.localizedCaseInsensitiveContains(q)
+            || url.localizedCaseInsensitiveContains(q)
+            || (description?.localizedCaseInsensitiveContains(q) ?? false)
+            || tags.contains { $0.localizedCaseInsensitiveContains(q) }
+    }
 }
 
 /// アイコン＋色でカスタムできるコレクション
