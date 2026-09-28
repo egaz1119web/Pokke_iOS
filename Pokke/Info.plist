@@ -2,60 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDisplayName</key>
-	<string>Pokke</string>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-
-	<!-- 詳細画面の「保存」で、サムネイル画像を写真ライブラリへ入れる。
-	     追加のみで既存の写真は読まないため .addOnly の権限しか要求しない
-	     （そのためアルバムは作らない。詳細は ImageSaver.swift）。
-	     ここは開発言語(en)の文言で、ja/ko は InfoPlist.xcstrings 側で差し替わる -->
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Adds thumbnail images from your saved links to Photos.</string>
-
-	<!-- 同梱フォント（Pokke/Fonts/）。値はファイル名で、コードからはPostScript名で引く。
-	     すべて SIL Open Font License 1.1（表記は THIRD_PARTY_NOTICES.md） -->
-	<key>UIAppFonts</key>
+	<key>CFBundleURLTypes</key>
 	<array>
-		<string>caprasimo_regular.ttf</string>
-		<string>figtree_regular.ttf</string>
-		<string>figtree_medium.ttf</string>
-		<string>figtree_semibold.ttf</string>
-		<string>figtree_bold.ttf</string>
-		<string>zen_maru_gothic_regular.ttf</string>
-		<string>zen_maru_gothic_bold.ttf</string>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>google-sign-in</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.514721026186-km231hioauu7jfia2dg0gqjemqqvmqn0</string>
+			</array>
+		</dict>
 	</array>
-	<key>UILaunchScreen</key>
-	<dict/>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-
-	<!-- AdMob アプリID（本番）。Info.plistはビルド構成で値を出し分けられないため常にこの値だが、
-	     問題ない：安全性は「どの広告ユニットIDでリクエストするか」で決まり、そちらは
-	     NativeAdCard.swift の AdUnits.native 側で Debug=テストID / Release=本番ID を
-	     切り替えている（Googleの公式ガイドでも、本番アプリID＋テスト広告ユニットIDの
-	     組み合わせが開発時の標準的なテスト方法とされている）。 -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-9758850573913500~4992835164</string>
-
-	<!-- SKAdNetwork帰属用。IDFAが取れなくてもGoogleと参加バイヤーがインストール計測できるように
-	     登録する。ATTのプロンプトは出していない（未実装）ので、これは純粋に宣言のみで動作に
-	     必須ではないが、Appleは審査でこれを見て「広告ネットワークがあるのにSKAdNetworkが
-	     空」だと指摘してくることがあるため入れておく。
-	     出典: https://developers.google.com/admob/ios/ios14 （Googleが今後も更新すると明言している
-	     リストなので、審査直前に最新版と突き合わせること）。 -->
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
@@ -259,22 +220,17 @@
 			<string>3qcr597p9d.skadnetwork</string>
 		</dict>
 	</array>
-
-	<!-- Googleログインのコールバック用。GoogleService-Info.plist の REVERSED_CLIENT_ID と
-	     同じ値でなければならない。Firebase で iOS アプリを作り直した場合はここも直すこと
-	     （食い違うとログイン後にアプリへ戻ってこられない）。 -->
-	<key>CFBundleURLTypes</key>
+	<key>UIAppFonts</key>
 	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLName</key>
-			<string>google-sign-in</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.514721026186-km231hioauu7jfia2dg0gqjemqqvmqn0</string>
-			</array>
-		</dict>
+		<string>caprasimo_regular.ttf</string>
+		<string>figtree_regular.ttf</string>
+		<string>figtree_medium.ttf</string>
+		<string>figtree_semibold.ttf</string>
+		<string>figtree_bold.ttf</string>
+		<string>zen_maru_gothic_regular.ttf</string>
+		<string>zen_maru_gothic_bold.ttf</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>
